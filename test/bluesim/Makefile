@@ -1,7 +1,7 @@
 include ../../Makefile.base
 
-FILE ?= TestCrc32AxiStream256.bsv
-TOP ?= mkTestCrc32AxiStream256
+FILE ?= TestCrc32AxiStream.bsv
+TOP ?= mkTestCrc32AxiStream512
 
 SIMEXE = $(BUILDDIR)/$(TOP).exe
 

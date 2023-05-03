@@ -83,22 +83,22 @@ module mkCRC32AxiStream512(CRC32AxiStream512);
 endmodule
 
 
-typedef 1024 AXIS1024_WIDTH;
-typedef TDiv#(AXIS1024_WIDTH, BYTE_WIDTH) AXIS1024_KEEP_WIDTH;
-typedef CRCAxiStream#(CRC32_WIDTH, AXIS1024_KEEP_WIDTH, AXIS1024_WIDTH) CRC32AxiStream1024;
-(* synthesize *)
-module mkCRC32AxiStream1024(CRC32AxiStream1024);
-    CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
-        polynominal: 'h04C11DB7,
-        initVal    : 'hFFFFFFFF,
-        finalXor   : 'hFFFFFFFF,
-        reflectData: True,
-        reflectRemainder: True
-    };
+// typedef 1024 AXIS1024_WIDTH;
+// typedef TDiv#(AXIS1024_WIDTH, BYTE_WIDTH) AXIS1024_KEEP_WIDTH;
+// typedef CRCAxiStream#(CRC32_WIDTH, AXIS1024_KEEP_WIDTH, AXIS1024_WIDTH) CRC32AxiStream1024;
+// (* synthesize *)
+// module mkCRC32AxiStream1024(CRC32AxiStream1024);
+//     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
+//         polynominal: 'h04C11DB7,
+//         initVal    : 'hFFFFFFFF,
+//         finalXor   : 'hFFFFFFFF,
+//         reflectData: True,
+//         reflectRemainder: True
+//     };
 
-    CRC32AxiStream1024 crc32 <- mkCRCAxiStream(conf);
-    return crc32;
-endmodule
+//     CRC32AxiStream1024 crc32 <- mkCRCAxiStream(conf);
+//     return crc32;
+// endmodule
 
 
 

@@ -95,7 +95,7 @@ if __name__ == '__main__':
     rev_input = False
     rev_output = False
     crc_tab_gen = CrcLookUpTable(poly, init_val, final_xor, rev_input, rev_output)
-    crc_tab_gen.gen_crc_tab_file("crc_tab", range(32))
+    crc_tab_gen.gen_crc_tab_file("crc_tab", range(64))
     
     
             
