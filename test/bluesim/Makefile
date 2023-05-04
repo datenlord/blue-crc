@@ -1,7 +1,9 @@
 include ../../Makefile.base
 
-FILE ?= TestCrc32AxiStream.bsv
-TOP ?= mkTestCrc32AxiStream512
+CRC_WIDTH = 8
+AXI_WIDTH = 512
+FILE ?= TestCRC$(CRC_WIDTH)AxiStream.bsv
+TOP ?= mkTestCRC$(CRC_WIDTH)AxiStream$(AXI_WIDTH)
 
 SIMEXE = $(BUILDDIR)/$(TOP).exe
 
@@ -14,7 +16,7 @@ link: compile
 	bsc -sim $(BLUESIMFLAGS) $(DIRFLAGS) $(RECOMPILEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -e $(TOP) -o $(SIMEXE)
 
 simulate: link
-	python3 ../../src/gen_crc_tab.py
+	python3 ../../src/gen_crc_tab.py $(CRC_WIDTH) $(AXI_WIDTH)
 	$(SIMEXE)
 
 clean:

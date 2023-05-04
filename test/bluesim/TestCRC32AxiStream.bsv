@@ -17,7 +17,7 @@ typedef 8 CASE_COUNT_WIDTH;
 typedef 133 CASE_BYTE_WIDTH;
 
 (* synthesize *)
-module mkTestCrc32AxiStream64 (Empty);
+module mkTestCRC32AxiStream64 (Empty);
 
     CrcConfig#(CRC32_WIDTH) crcConf = CrcConfig {
         polynominal: 'h04C11DB7,
@@ -43,7 +43,7 @@ module mkTestCrc32AxiStream64 (Empty);
 endmodule
 
 (* synthesize *)
-module mkTestCrc32AxiStream128 (Empty);
+module mkTestCRC32AxiStream128 (Empty);
 
     CrcConfig#(CRC32_WIDTH) crcConf = CrcConfig {
         polynominal: 'h04C11DB7,
@@ -69,7 +69,7 @@ module mkTestCrc32AxiStream128 (Empty);
 endmodule
 
 (* synthesize *)
-module mkTestCrc32AxiStream256 (Empty);
+module mkTestCRC32AxiStream256 (Empty);
 
     CrcConfig#(CRC32_WIDTH) crcConf = CrcConfig {
         polynominal: 'h04C11DB7,
@@ -95,7 +95,7 @@ module mkTestCrc32AxiStream256 (Empty);
 endmodule
 
 (* synthesize *)
-module mkTestCrc32AxiStream512 (Empty);
+module mkTestCRC32AxiStream512 (Empty);
 
     CrcConfig#(CRC32_WIDTH) crcConf = CrcConfig {
         polynominal: 'h04C11DB7,

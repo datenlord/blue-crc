@@ -116,7 +116,7 @@ module mkTestCRCAxiStream#(
         $display("Revc case %d output: DUT=%x REF=%x", outputCaseCount,dutOutput, refOutput);
         immAssert(
             dutOutput == refOutput,
-            "Check meta data from dstUdp @ mkTestUdpEth",
+            "Check meta data from CRCAxiStream @ mkCRCAxiStream",
             $format("The output of dut and ref are inconsistent")
         );
         outputCaseCount <= outputCaseCount + 1;

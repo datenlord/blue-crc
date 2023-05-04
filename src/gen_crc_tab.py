@@ -1,3 +1,5 @@
+import sys
+
 BYTE_WIDTH = 8
 BYTE_MAX_VAL = pow(2, BYTE_WIDTH) - 1
 
@@ -89,13 +91,42 @@ class CrcLookUpTable:
             file.close()
 
 if __name__ == '__main__':
-    poly = b"\x04\xC1\x1D\xB7"
-    init_val = b"\x00\x00\x00\x00"
-    final_xor = b"\x00\x00\x00\x00"
-    rev_input = False
-    rev_output = False
-    crc_tab_gen = CrcLookUpTable(poly, init_val, final_xor, rev_input, rev_output)
-    crc_tab_gen.gen_crc_tab_file("crc_tab", range(64))
+    crc8_tab = CrcLookUpTable(
+        polynominal = b'\x07', 
+        init_val = b'\x00', 
+        final_xor = b'\x00', 
+        rev_input = False, 
+        rev_output = False
+    )
+    crc16_tab = CrcLookUpTable(
+        polynominal = b'\x80\x05', 
+        init_val = b'\x00\x00', 
+        final_xor = b'\x00\x00', 
+        rev_input = False, 
+        rev_output = False
+    )
+    crc32_tab = CrcLookUpTable(
+        polynominal = b'\x04\xC1\x1D\xB7', 
+        init_val = b'\x00\x00\x00\x00', 
+        final_xor = b'\x00\x00\x00\x00', 
+        rev_input = False, 
+        rev_output = False
+    )
+    
+    crc_width_opt = (8, 16, 32)
+    crc_tab_map = {8:crc8_tab, 16:crc16_tab, 32:crc32_tab}
+    standard_opt = () # TODO:
+    
+    assert len(sys.argv) == 3, "The number of input arguments is incorrect."
+    arg = sys.argv
+    crc_width = int(arg[1])
+    assert crc_width in crc_width_opt, f"Table generation of {crc_width}-bit hasn't been supported."
+    input_width = int(arg[2])
+    assert input_width % 8 == 0, f"The width of input data must be multiples of 8 bits."
+    
+    input_byte_num = int(input_width / 8)
+    crc_tab_map[crc_width].gen_crc_tab_file("crc_tab", range(input_byte_num))
+
     
     
             

@@ -5,8 +5,8 @@ import Printf :: *;
 import GetPut :: *;
 
 // Parameters that define a specific CRC calculator
-// data width
-// crc width
+// input data width (8b bit)
+// crc width (8n bit)
 // polynominal
 // final xor
 // reflect input data
@@ -35,6 +35,19 @@ typedef struct {
     Bool reflectRemainder;
 } CrcConfig#(numeric type width) deriving(Bits, Eq, FShow);
 
+typedef  8 CRC8_WIDTH;
+typedef 16 CRC16_WIDTH;
+typedef 32 CRC32_WIDTH;
+
+typedef  64 AXIS64_WIDTH;
+typedef 128 AXIS128_WIDTH;
+typedef 256 AXIS256_WIDTH;
+typedef 512 AXIS512_WIDTH;
+
+typedef TDiv#(AXIS64_WIDTH,  BYTE_WIDTH)  AXIS64_KEEP_WIDTH;
+typedef TDiv#(AXIS128_WIDTH, BYTE_WIDTH) AXIS128_KEEP_WIDTH;
+typedef TDiv#(AXIS256_WIDTH, BYTE_WIDTH) AXIS256_KEEP_WIDTH;
+typedef TDiv#(AXIS512_WIDTH, BYTE_WIDTH) AXIS512_KEEP_WIDTH;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////// Implementation of utility functions used in the design
