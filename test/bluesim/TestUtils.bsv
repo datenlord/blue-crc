@@ -2,7 +2,7 @@ import FIFOF :: *;
 import GetPut :: *;
 import Vector :: *;
 
-import CRCAxiStream :: *;
+import CrcAxiStream :: *;
 function Action immAssert(Bool condition, String assertName, Fmt assertFmtMsg);
     action
         let pos = printPosition(getStringPosition(assertName));

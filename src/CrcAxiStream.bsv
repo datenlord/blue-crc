@@ -49,6 +49,19 @@ typedef TDiv#(AXIS128_WIDTH, BYTE_WIDTH) AXIS128_KEEP_WIDTH;
 typedef TDiv#(AXIS256_WIDTH, BYTE_WIDTH) AXIS256_KEEP_WIDTH;
 typedef TDiv#(AXIS512_WIDTH, BYTE_WIDTH) AXIS512_KEEP_WIDTH;
 
+typedef 8'h07        CRC8_CCITT_POLY;
+typedef 16'h8005     CRC16_ANSI_POLY;
+typedef 32'h04C11DB7 CRC32_IEEE_POLY;
+
+typedef 8'h00        CRC8_CCITT_INIT_VAL;
+typedef 16'h0000     CRC16_ANSI_INIT_VAL;
+typedef 32'hFFFFFFFF CRC32_IEEE_INIT_VAL;
+
+typedef 8'h00       CRC8_CCITT_FINAL_XOR;
+typedef 16'h0000     CRC16_ANSI_FINAL_XOR;
+typedef 32'hFFFFFFFF CRC32_IEEE_FINAL_XOR;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////// Implementation of utility functions used in the design
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,12 +183,12 @@ typedef struct {
 } ShiftInterCrcRes#(numeric type dataWidth, numeric type crcWidth) deriving(Bits, FShow);
 
 
-interface CRCAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
+interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
     interface Put#(AxiStream#(dataByteNum, dataWidth)) axiStreamIn;
     interface Get#(CrcResult#(crcWidth)) crcResultOut;
 endinterface
 
-module mkCRCAxiStream#(CrcConfig#(crcWidth) conf)(CRCAxiStream#(crcWidth, dataByteNum, dataWidth)) 
+module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, dataWidth)) 
     provisos(
         Mul#(BYTE_WIDTH, dataByteNum, dataWidth), 
         Mul#(BYTE_WIDTH, crcByteNum, crcWidth),

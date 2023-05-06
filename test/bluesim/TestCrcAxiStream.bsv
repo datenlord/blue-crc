@@ -5,7 +5,7 @@ import Vector :: *;
 import GetPut :: *;
 import Connectable :: *;
 
-import CRCAxiStream :: *;
+import CrcAxiStream :: *;
 import TestUtils :: *;
 
 // Configuration of CRC Tester
@@ -13,7 +13,7 @@ typedef struct {
     Bit#(cycleCountWidth)  maxCycle;
     Bit#(caseCountWidth)   caseNum;
     CrcConfig#(crcWidth)   crcConfig;
-} TestCRCAxiStreamConfig#(
+} TestCrcAxiStreamConfig#(
     numeric type cycleCountWidth,
     numeric type caseCountWidth,
     numeric type caseByteNum,
@@ -21,8 +21,8 @@ typedef struct {
     numeric type axiByteNum
 );
 
-module mkTestCRCAxiStream#(
-    TestCRCAxiStreamConfig#(
+module mkTestCrcAxiStream#(
+    TestCrcAxiStreamConfig#(
         cycleCountWidth, 
         caseCountWidth, 
         caseByteNum, 
@@ -33,8 +33,8 @@ module mkTestCRCAxiStream#(
     Mul#(crcByteNum, BYTE_WIDTH, crcWidth),
     Mul#(caseByteNum, BYTE_WIDTH, caseWidth),
     Mul#(axiByteNum, BYTE_WIDTH, axiWidth),
-    CRCAxiStream::ReduceBalancedTree#(axiByteNum, Bit#(crcWidth)),
-    CRCAxiStream::ReduceBalancedTree#(crcByteNum, Bit#(crcWidth)),
+    ReduceBalancedTree#(axiByteNum, Bit#(crcWidth)),
+    ReduceBalancedTree#(crcByteNum, Bit#(crcWidth)),
 
     Add#(8, a__, caseWidth),
     Add#(8, e__, crcWidth),
@@ -59,7 +59,7 @@ module mkTestCRCAxiStream#(
     AxiStreamSender#(
         caseWidth, axiByteNum, axiWidth, caseCountWidth
     ) axiSender <- mkAxiStreamSender;
-    CRCAxiStream#(crcWidth, axiByteNum, axiWidth) dutCrcModel <- mkCRCAxiStream(crcConf);
+    CrcAxiStream#(crcWidth, axiByteNum, axiWidth) dutCrcModel <- mkCrcAxiStream(crcConf);
     
     mkConnection(dutCrcModel.axiStreamIn, axiSender.axiStreamOut);
 
@@ -116,7 +116,7 @@ module mkTestCRCAxiStream#(
         $display("Revc case %d output: DUT=%x REF=%x", outputCaseCount,dutOutput, refOutput);
         immAssert(
             dutOutput == refOutput,
-            "Check meta data from CRCAxiStream @ mkCRCAxiStream",
+            "Check meta data from CrcAxiStream @ mkCrcAxiStream",
             $format("The output of dut and ref are inconsistent")
         );
         outputCaseCount <= outputCaseCount + 1;
@@ -124,6 +124,7 @@ module mkTestCRCAxiStream#(
 
     rule doFinish if (outputCaseCount == conf.caseNum);
         $display("Pass all %d test cases!", conf.caseNum);
+        $display("0");
         $finish;
     endrule
 endmodule

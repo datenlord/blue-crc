@@ -2,8 +2,8 @@ include ../../Makefile.base
 
 CRC_WIDTH = 8
 AXI_WIDTH = 512
-FILE ?= TestCRC$(CRC_WIDTH)AxiStream.bsv
-TOP ?= mkTestCRC$(CRC_WIDTH)AxiStream$(AXI_WIDTH)
+FILE ?= TestCrc$(CRC_WIDTH)AxiStream.bsv
+TOP ?= mkTestCrc$(CRC_WIDTH)AxiStream$(AXI_WIDTH)
 
 SIMEXE = $(BUILDDIR)/$(TOP).exe
 
@@ -20,7 +20,7 @@ simulate: link
 	$(SIMEXE)
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILDDIR) logs
 	rm *.dat
 
 .PHONY: compile link simulate clean table
