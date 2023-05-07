@@ -1,2 +1,9 @@
 build/
 TODO
+logs/
+generated/
+output/
+.Xil/
+*.log
+*.jou
+*.txt

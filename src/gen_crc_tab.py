@@ -1,4 +1,5 @@
 import sys
+import os
 
 BYTE_WIDTH = 8
 BYTE_MAX_VAL = pow(2, BYTE_WIDTH) - 1
@@ -81,7 +82,7 @@ class CrcLookUpTable:
     
     def gen_crc_tab_file(self, file_prefix:str, offset_range:range):
         for i in offset_range:
-            file_name = file_prefix + f"_{i}.dat"
+            file_name = file_prefix + f"_{i}.mem"
             file = open(file_name, 'w')
             crc_table = self.gen_byte_crc_tab(i)
             for crc in crc_table:
@@ -117,15 +118,19 @@ if __name__ == '__main__':
     crc_tab_map = {8:crc8_tab, 16:crc16_tab, 32:crc32_tab}
     standard_opt = () # TODO:
     
-    assert len(sys.argv) == 3, "The number of input arguments is incorrect."
+    assert len(sys.argv) >= 3, "The number of input arguments is incorrect."
     arg = sys.argv
     crc_width = int(arg[1])
     assert crc_width in crc_width_opt, f"Table generation of {crc_width}-bit hasn't been supported."
     input_width = int(arg[2])
     assert input_width % 8 == 0, f"The width of input data must be multiples of 8 bits."
+    path = "."
+    if len(sys.argv) > 3:
+        path = arg[4]
     
     input_byte_num = int(input_width / 8)
-    crc_tab_map[crc_width].gen_crc_tab_file("crc_tab", range(input_byte_num))
+    file_prefix = os.path.join(path, "crc_tab")
+    crc_tab_map[crc_width].gen_crc_tab_file(file_prefix, range(input_byte_num))
 
     
     

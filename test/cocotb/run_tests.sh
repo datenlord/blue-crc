@@ -25,7 +25,7 @@ for crc_width in ${crc_width_opt[@]}; do
 
         test_results=(${test_results[@]} $?)
         modules=(${modules[@]} ${module})
-        rm -f *.dat
+        rm -f *.mem
     done
 done
 

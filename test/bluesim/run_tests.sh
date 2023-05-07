@@ -26,7 +26,7 @@ for crc_width in ${crc_width_opt[@]}; do
             pass_all=1
         fi
         echo ""
-        rm -f *.dat
+        rm -f *.mem
     done
 done
 echo "Complete All tests"

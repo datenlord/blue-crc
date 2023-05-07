@@ -1,4 +1,4 @@
-include ../../Makefile.base
+include ../../scripts/Makefile.base
 
 CRC_WIDTH = 8
 AXI_WIDTH = 512
@@ -21,7 +21,7 @@ simulate: link
 
 clean:
 	rm -rf $(BUILDDIR) logs
-	rm *.dat
+	rm *.mem
 
 .PHONY: compile link simulate clean table
 .DEFAULT_GOAL := simulate

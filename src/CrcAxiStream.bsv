@@ -67,7 +67,7 @@ typedef 32'hFFFFFFFF CRC32_IEEE_FINAL_XOR;
 ////////////////////////////////////////////////////////////////////////////////
 module mkCrcRegFileTable#(Integer offset)(Integer idx, RegFile#(Byte, CrcResult#(width)) ifc);
     // $display("crc lookup tab offset: %d", offset);
-    let initFile = sprintf("crc_tab_%d.dat", offset + idx);
+    let initFile = sprintf("crc_tab_%d.mem", offset + idx);
     RegFile#(Byte, CrcResult#(width)) regFile <- mkRegFileFullLoad(initFile);
     return regFile;
 endmodule
