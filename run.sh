@@ -14,6 +14,10 @@ TEST_DIR=${ROOT_DIR}/test
 BLUESIM_DIR=${TEST_DIR}/bluesim
 COCOTB_DIR=${TEST_DIR}/cocotb
 
+# Check Codes format
+echo -e "\nStart formatting Codes"
+black --check $(find ./ -name "*.py")
+
 # Run Bluesim Tests
 echo -e "\nStart Bluesim Tests"
 cd ${BLUESIM_DIR}

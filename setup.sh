@@ -21,6 +21,7 @@ export PATH=$PATH:$BLUESPEC_HOME/bin
 EOF
 
 # Python Environment
+pip install black
 pip install cocotb
 pip install pip install cocotb-test
 pip install cocotbext-axi
