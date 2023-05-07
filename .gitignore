@@ -1,9 +1,10 @@
 build/
 TODO
-logs/
 generated/
 output/
 .Xil/
 *.log
 *.jou
 *.txt
+__pycache__
+logs/
