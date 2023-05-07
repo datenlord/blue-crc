@@ -4,6 +4,11 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
+BASH_PROFILE=$HOME/.bash_profile
+if [ -f "$BASH_PROFILE" ]; then
+    source $BASH_PROFILE
+fi
+
 ROOT_DIR=`pwd`
 TEST_DIR=${ROOT_DIR}/test
 BLUESIM_DIR=${TEST_DIR}/bluesim
