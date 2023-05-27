@@ -184,8 +184,8 @@ typedef struct {
 
 
 interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
-    interface Put#(AxiStream#(dataByteNum, dataWidth)) axiStreamIn;
-    interface Get#(CrcResult#(crcWidth)) crcResultOut;
+    interface Put#(AxiStream#(dataByteNum, dataWidth)) crcReq; // crcReq
+    interface Get#(CrcResult#(crcWidth)) crcResp; // crcResp
 endinterface
 
 module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, dataWidth)) 
@@ -316,7 +316,7 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
         finalCrcBuf.enq(finalCrc);
     endrule
 
-    interface Put axiStreamIn;
+    interface Put crcReq;
         method Action put(AxiStream#(dataByteNum, dataWidth) stream);
             // swap endian
             stream.tData = swapEndian(stream.tData);
@@ -340,5 +340,5 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
         endmethod
     endinterface
 
-    interface Get crcResultOut = toGet(finalCrcBuf);
+    interface Get crcResp = toGet(finalCrcBuf);
 endmodule

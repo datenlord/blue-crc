@@ -10,9 +10,9 @@ The main features of the implemented CRC IP are listed as follows:
 
 - Complete CRC Configuration: The IP supports complete CRC configuration parameters including polynomial, initVal(the initial CRC value), finalXor(the result is xor’d with this value if desired), reflectData(if True, reverse the input bit order), reflectRemainder(if True, reverse the result bit order).
 - Standard Interface: The input interface supports AxiStream protocol whose data width is parameterized. And the outputCRC result is guarded by the basic handshake protocol.
-- Parallel: The IP is able to process multiple bytes at the same time.
-- Fully Pipelined: The IP receives takes in one AxiStream frame every cycle.
-- High Throughput: The IP configured with 256-bit input and 32-bit CRC output can runs at 500MHz on Xilinx vu9p FPGA.
+- Parallel: The IP is designed to process multi-byte input at the same cycle.
+- Fully Pipelined: The IP takes in one AxiStream frame every cycle.
+- High Throughput: The IP configured with 256-bit input and 32-bit CRC output can runs at 500MHz on Xilinx xcvu9p FPGA.
 
 # Theory of Operation
 
@@ -89,7 +89,7 @@ Following the equation above, in the second iteration, the $CRC(A_{n-1}(x))$ got
 
 Based on the parallel scheme proposed above, a simplified pipelined hardware architecture used in our design is shown in the figure below:
 
-<div align=center><img src="./img/blockdiagram.png"></div>
+<div align=center><img src="./img/blockdiagram.png" width="55%"></div>
 
 The main problem of this pipelined architecture is that it assumes that the length of original data just be multiples of input port width. But in real applications, this assumption is impractical especially for large port width like 256-bits and 512-bits. So additional data and control path is needed to handle this unalignment case. And our design has added this handling logic and supports calculating the CRC of original data with any length. The theory and corresponding structure to resolve unalignment case will be added to this document in the near future.
 
@@ -146,7 +146,7 @@ Besides, the BSV implementation can also generates Verilog codes and we provide 
 
 The CRC IP supports calculating CRC of original data consisting of arbitrary number of bytes. The original data is divided into small pieces of same size first and then the pieces are transmitted to the CRC component serially. Note that the data should be transmitted in the **big-endian** order, which means that data pieces of more significant bits are transmitted first and in a AxiStream transaction the most significant byte is placed in the lowest 8-bit of tData field. The figure below shows the example of transmitting 10-bytes original data and the width of tData is configured at 32-bit. Note that if the length of data is not a multiple of the width of tData, the bits in  tKeep corresponds to null bytes should be clear.
 
-<div align=center><img src="./img/transaction.png"></div>
+<div align=center><img src="./img/transaction.png" width="65%"></div>
 
 # Area Usage and Frequency
 
@@ -265,9 +265,13 @@ BLOCKRAM
 | URAM           |    0 |     0 |          0 |       960 |  0.00 |
 +----------------+------+-------+------------+-----------+-------+
 ```
-
+# User Interface
+For BSV users, you can import our packages directly and instantiate CrcAxiStream interface in your codes. And for Verilog users, we also provide a script in [scripts/CrcGenerator.py](./scripts/CrcGenerator.py) to generate custom Verilog module automatically. In the header of this script, you can specify parameters of the custom CRC hardware you need and then run the script in the root directory by:
+```
+python3 scripts/CrcGenerator.py
+```
+The generated files containing Verilog modules and contents of used lookup tables are located in the [gen/](./gen/) directory. It shound be noted that you need to install [bluespec compiler](https://github.com/B-Lang-org/bsc/releases) before running the scripts to generate Verilog files.
 # Further Work
 
-- Refine timing violation of 512-bit dataWidth and 32-bit crcWidth.
+- Refine timing violation under the configuration of 512-bit dataWidth and 32-bit crcWidth.
 - Complete documentation in algorithm theory part.
-- Provide interface to generate custom Verilog modules.
