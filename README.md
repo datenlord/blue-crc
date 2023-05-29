@@ -117,7 +117,7 @@ The following table lists the instantiation parameters of our CRC IP.
 | axiStreamIn | Put#( AxiStream#(dataByteNum, dataWidth) ) | The Put interface includes a method which takes in a struct of AxiStream type and returns Action. |
 | crcResultOut | Get#(Bit#(crcWidth)) | The Get interface includes a method which returns ActionValue#(Bit#(crcWidth)). |
 
-The fields of AxiStream struct are listed below:
+The fields of AxiStream struct in BSV are listed below:
 
 | Name | Type |
 | --- | --- |
@@ -126,12 +126,12 @@ The fields of AxiStream struct are listed below:
 | tLast | Bool |
 | tUser | Bool |
 
-Besides, the BSV implementation can also generates Verilog codes and we provide a wrapper file for generated Verilog module for convenient interaction. The signals of this wrapper module are listed below:
+Besides, the BSV implementation can also generate Verilog codes and all interface signals are listed as below:
 
 | Name | Direction | Type |
 | --- | --- | --- |
-| clk | In | wire |
-| reset_n | In | wire |
+| CLK | In | wire |
+| RST_N | In | wire |
 | s_axi_stream_tvalid | In | wire |
 | s_axi_stream_tready | Out | wire |
 | s_axi_stream_tlast | In | wire |
