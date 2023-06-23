@@ -102,29 +102,6 @@ function Bit#(width) byteLeftShift(Bit#(width) dataIn, Bit#(shiftAmtWidth) shift
     return pack(dataInVec);
 endfunction
 
-// function dType reduceBalancedTree(function dType func(dType a, dType b), Vector#(num, dType) vecIn) 
-//     provisos(Add#(num, a__, 2), Log#(num, numLog));
-//     // dType firstHalfRes;
-//     // dType secondHalfRes;
-//     // if (valueOf(firstHalf) >= 2) begin
-//     //     Vector#(firstHalf, dType) firstHalfVec = take(vecIn);
-//     //     firstHalfRes = reduceBalancedTree(func, firstHalfVec);
-//     // end
-//     // else begin
-//     //     firstHalfRes = head(vecIn);
-//     // end
-
-//     // if (valueOf(secondHalf) >= 2) begin
-//     //     Vector#(secondHalf, dType) secondHalfVec = drop(vecIn);
-//     //     secondHalfRes = reduceBalancedTree(func, secondHalfVec);
-//     // end
-//     // else begin
-//     //     secondHalfRes = last(vecIn);
-//     // end
-
-//     // return func(firstHalfRes, secondHalfRes);
-// endfunction
-
 typeclass ReduceBalancedTree#(numeric type num, type dType);
     function dType reduceBalancedTree(function dType op(dType a, dType b), Vector#(num, dType) vecIn);
 endtypeclass
