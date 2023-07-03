@@ -4,6 +4,8 @@ import Vector :: *;
 import Printf :: *;
 import GetPut :: *;
 
+import AxiStreamTypes :: *;
+
 // Parameters that define a specific CRC calculator
 // input data width (8b bit)
 // crc width (8n bit)
@@ -21,13 +23,6 @@ typedef Bit#(BYTE_WIDTH) Byte;
 typedef Bit#(width) CrcResult#(numeric type width);
 
 typedef struct {
-    Bit#(dataWidth) tData;
-    Bit#(keepWidth) tKeep;
-    Bool tUser;
-    Bool tLast;
-} AxiStream#(numeric type keepWidth, numeric type dataWidth) deriving(Bits, Eq, FShow);
-
-typedef struct {
     Bit#(width) polynominal;
     Bit#(width) initVal;
     Bit#(width) finalXor;
@@ -39,15 +34,12 @@ typedef  8 CRC8_WIDTH;
 typedef 16 CRC16_WIDTH;
 typedef 32 CRC32_WIDTH;
 
-typedef  64 AXIS64_WIDTH;
-typedef 128 AXIS128_WIDTH;
-typedef 256 AXIS256_WIDTH;
-typedef 512 AXIS512_WIDTH;
+typedef   1 AXIS_USER_WIDTH;
 
-typedef TDiv#(AXIS64_WIDTH,  BYTE_WIDTH)  AXIS64_KEEP_WIDTH;
-typedef TDiv#(AXIS128_WIDTH, BYTE_WIDTH) AXIS128_KEEP_WIDTH;
-typedef TDiv#(AXIS256_WIDTH, BYTE_WIDTH) AXIS256_KEEP_WIDTH;
-typedef TDiv#(AXIS512_WIDTH, BYTE_WIDTH) AXIS512_KEEP_WIDTH;
+typedef  8 AXIS64_KEEP_WIDTH;
+typedef 16 AXIS128_KEEP_WIDTH;
+typedef 32 AXIS256_KEEP_WIDTH;
+typedef 64 AXIS512_KEEP_WIDTH;
 
 typedef 8'h07        CRC8_CCITT_POLY;
 typedef 16'h8005     CRC16_ANSI_POLY;
@@ -160,12 +152,12 @@ typedef struct {
 } ShiftInterCrcRes#(numeric type dataWidth, numeric type crcWidth) deriving(Bits, FShow);
 
 
-interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
-    interface Put#(AxiStream#(dataByteNum, dataWidth)) crcReq; // crcReq
+interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type usrWidth);
+    interface Put#(AxiStream#(dataByteNum, usrWidth)) crcReq; // crcReq
     interface Get#(CrcResult#(crcWidth)) crcResp; // crcResp
 endinterface
 
-module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, dataWidth)) 
+module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, usrWidth)) 
     provisos(
         Mul#(BYTE_WIDTH, dataByteNum, dataWidth), 
         Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
@@ -294,7 +286,7 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
     endrule
 
     interface Put crcReq;
-        method Action put(AxiStream#(dataByteNum, dataWidth) stream);
+        method Action put(AxiStream#(dataByteNum, usrWidth) stream);
             // swap endian
             stream.tData = swapEndian(stream.tData);
             stream.tKeep = reverseBits(stream.tKeep);

@@ -65,16 +65,13 @@ class CrcAxiStreamConfig:
 
     def gen_verilog(self):
         root_path = test_dir = os.path.abspath(".")
-        src_path = os.path.join(root_path, "src")
-        scripts_path = os.path.join(root_path, "scripts")
         gen_path = os.path.join(root_path, "gen")
         bsv_file = "CrcRawAxiStreamCustom.bsv"
         module = "mkCrcRawAxiStreamCustom"
-        makefile = os.path.join(scripts_path, "GenVerilog.mk")
+        makefile = os.path.join(root_path, "test", "cocotb", "Makefile")
 
         macros = [f"CRC_WIDTH={self.crc_width}"]
         macros.append(f"KEEP_WIDTH={self.input_byte_width}")
-        macros.append(f"DATA_WIDTH={self.input_width}")
         macros.append(f"POLY={self.poly}")
         macros.append(f"INIT_VAL={self.init_val}")
         macros.append(f"FINAL_XOR={self.final_xor}")
@@ -84,16 +81,12 @@ class CrcAxiStreamConfig:
         macro_args = reduce(lambda x, y: x + " " + y, macro_args)
         macro_args = '"' + macro_args + '"'
 
-        make_args = [f"CRC_WIDTH={self.crc_width}"]
-        make_args.append(f"AXI_WIDTH={self.input_width}")
-        make_args.append(f"SCRIPTS_PATH={scripts_path}")
-        make_args.append(f"MACROSAGS={macro_args}")
+        make_args = []
+        make_args.append(f"ROOT_DIR={root_path}")
+        make_args.append(f"MACROFLAGS={macro_args}")
         make_args.append(f"FILE={bsv_file}")
         make_args.append(f"TOP={module}")
-        make_args.append(f"FILE_PATH={src_path}")
         make_args.append(f"VLOGDIR={gen_path}")
-        make_args.append(f"TABDIR={gen_path}")
-        make_args.append(f'BSVSRCDIR="-p +:{src_path}"')
         make_args = reduce(lambda x, y: x + " " + y, make_args)
 
         os.system("mkdir -p gen")

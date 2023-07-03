@@ -1,7 +1,7 @@
 import CrcAxiStream :: *;
 import CrcRawAxiStream :: *;
 
-typedef CrcRawAxiStream#(`CRC_WIDTH, `KEEP_WIDTH, `DATA_WIDTH) CrcRawAxiStreamCustom;
+typedef CrcRawAxiStream#(`CRC_WIDTH, `KEEP_WIDTH, AXIS_USER_WIDTH) CrcRawAxiStreamCustom;
 (* synthesize *)
 module mkCrcRawAxiStreamCustom(CrcRawAxiStreamCustom);
     CrcConfig#(`CRC_WIDTH) conf = CrcConfig {

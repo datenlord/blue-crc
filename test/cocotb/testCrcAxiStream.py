@@ -91,7 +91,7 @@ def testCrcAxiStream():
     module = os.path.splitext(os.path.basename(__file__))[0]
     test_dir = os.path.abspath(os.path.dirname(__file__))
     sim_build = os.path.join(test_dir, "build")
-    v_top_file = os.path.join(test_dir, "generated", f"{toplevel}.v")
+    v_top_file = os.path.join(test_dir, "verilog", f"{toplevel}.v")
     verilog_sources = [v_top_file]
 
     cocotb_test.simulator.run(

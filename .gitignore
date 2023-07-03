@@ -6,6 +6,8 @@ output/
 *.log
 *.jou
 *.txt
+*.mem
 __pycache__
 logs/
 gen/
+verilog/

@@ -18,7 +18,7 @@ typedef struct {
     numeric type caseCountWidth,
     numeric type caseByteNum,
     numeric type crcWidth,
-    numeric type axiByteNum
+    numeric type axiKeepWidth
 );
 
 module mkTestCrcAxiStream#(
@@ -27,20 +27,20 @@ module mkTestCrcAxiStream#(
         caseCountWidth, 
         caseByteNum, 
         crcWidth, 
-        axiByteNum
+        axiKeepWidth
     ) conf
 )(Empty) provisos(
     Mul#(crcByteNum, BYTE_WIDTH, crcWidth),
     Mul#(caseByteNum, BYTE_WIDTH, caseWidth),
-    Mul#(axiByteNum, BYTE_WIDTH, axiWidth),
-    ReduceBalancedTree#(axiByteNum, Bit#(crcWidth)),
+    Mul#(axiKeepWidth, BYTE_WIDTH, axiDataWidth),
+    ReduceBalancedTree#(axiKeepWidth, Bit#(crcWidth)),
     ReduceBalancedTree#(crcByteNum, Bit#(crcWidth)),
 
     Add#(8, a__, caseWidth),
     Add#(8, e__, crcWidth),
-    Mul#(8, b__, TAdd#(axiWidth, crcWidth)),
-    Add#(caseByteNum, c__, TMul#(axiByteNum, TDiv#(caseWidth, axiWidth))),
-    Add#(caseWidth, d__, TMul#(TDiv#(caseWidth, axiWidth), axiWidth))
+    Mul#(8, b__, TAdd#(axiDataWidth, crcWidth)),
+    Add#(caseByteNum, c__, TMul#(axiKeepWidth, TDiv#(caseWidth, axiDataWidth))),
+    Add#(caseWidth, d__, TMul#(TDiv#(caseWidth, axiDataWidth), axiDataWidth))
 );
     let crcConf = conf.crcConfig;
     Reg#(Bit#(caseCountWidth)) inputCaseCount <- mkReg(0);
@@ -57,9 +57,9 @@ module mkTestCrcAxiStream#(
     FIFOF#(CrcResult#(crcWidth)) refOutputBuf <- mkFIFOF;
     
     AxiStreamSender#(
-        caseWidth, axiByteNum, axiWidth, caseCountWidth
+        caseWidth, axiKeepWidth, AXIS_USER_WIDTH, caseCountWidth
     ) axiSender <- mkAxiStreamSender;
-    CrcAxiStream#(crcWidth, axiByteNum, axiWidth) dutCrcModel <- mkCrcAxiStream(crcConf);
+    CrcAxiStream#(crcWidth, axiKeepWidth, AXIS_USER_WIDTH) dutCrcModel <- mkCrcAxiStream(crcConf);
     
     mkConnection(dutCrcModel.crcReq, axiSender.axiStreamOut);
 

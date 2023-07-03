@@ -1,6 +1,8 @@
 import CrcAxiStream :: *;
 import CrcRawAxiStream :: *;
 
+import AxiStreamTypes :: *;
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -10,7 +12,7 @@ import CrcRawAxiStream :: *;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef CrcAxiStream#(CRC32_WIDTH, AXIS64_KEEP_WIDTH, AXIS64_WIDTH) Crc32AxiStream64;
+typedef CrcAxiStream#(CRC32_WIDTH, AXIS64_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32AxiStream64;
 (* synthesize *)
 module mkCrc32AxiStream64(Crc32AxiStream64);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -25,7 +27,7 @@ module mkCrc32AxiStream64(Crc32AxiStream64);
     return crc32;
 endmodule
 
-typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS64_KEEP_WIDTH, AXIS64_WIDTH) Crc32RawAxiStream64;
+typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS64_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32RawAxiStream64;
 (* synthesize *)
 module mkCrc32RawAxiStream64(Crc32RawAxiStream64);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -41,7 +43,7 @@ module mkCrc32RawAxiStream64(Crc32RawAxiStream64);
 endmodule
 
 
-typedef CrcAxiStream#(CRC32_WIDTH, AXIS128_KEEP_WIDTH, AXIS128_WIDTH) Crc32AxiStream128;
+typedef CrcAxiStream#(CRC32_WIDTH, AXIS128_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32AxiStream128;
 (* synthesize *)
 module mkCrc32AxiStream128(Crc32AxiStream128);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -56,7 +58,7 @@ module mkCrc32AxiStream128(Crc32AxiStream128);
     return crc32;
 endmodule
 
-typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS128_KEEP_WIDTH, AXIS128_WIDTH) Crc32RawAxiStream128;
+typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS128_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32RawAxiStream128;
 (* synthesize *)
 module mkCrc32RawAxiStream128(Crc32RawAxiStream128);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -72,7 +74,7 @@ module mkCrc32RawAxiStream128(Crc32RawAxiStream128);
 endmodule
 
 
-typedef CrcAxiStream#(CRC32_WIDTH, AXIS256_KEEP_WIDTH, AXIS256_WIDTH) Crc32AxiStream256;
+typedef CrcAxiStream#(CRC32_WIDTH, AXIS256_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32AxiStream256;
 (* synthesize *)
 module mkCrc32AxiStream256(Crc32AxiStream256);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -87,7 +89,7 @@ module mkCrc32AxiStream256(Crc32AxiStream256);
     return crc32;
 endmodule
 
-typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS256_KEEP_WIDTH, AXIS256_WIDTH) Crc32RawAxiStream256;
+typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS256_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32RawAxiStream256;
 (* synthesize *)
 module mkCrc32RawAxiStream256(Crc32RawAxiStream256);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -103,7 +105,7 @@ module mkCrc32RawAxiStream256(Crc32RawAxiStream256);
 endmodule
 
 
-typedef CrcAxiStream#(CRC32_WIDTH, AXIS512_KEEP_WIDTH, AXIS512_WIDTH) Crc32AxiStream512;
+typedef CrcAxiStream#(CRC32_WIDTH, AXIS512_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32AxiStream512;
 (* synthesize *)
 module mkCrc32AxiStream512(Crc32AxiStream512);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
@@ -118,7 +120,7 @@ module mkCrc32AxiStream512(Crc32AxiStream512);
     return crc32;
 endmodule
 
-typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS512_KEEP_WIDTH, AXIS512_WIDTH) Crc32RawAxiStream512;
+typedef CrcRawAxiStream#(CRC32_WIDTH, AXIS512_KEEP_WIDTH, AXIS_USER_WIDTH) Crc32RawAxiStream512;
 (* synthesize *)
 module mkCrc32RawAxiStream512(Crc32RawAxiStream512);
     CrcConfig#(CRC32_WIDTH) conf = CrcConfig {
