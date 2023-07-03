@@ -102,29 +102,6 @@ function Bit#(width) byteLeftShift(Bit#(width) dataIn, Bit#(shiftAmtWidth) shift
     return pack(dataInVec);
 endfunction
 
-// function dType reduceBalancedTree(function dType func(dType a, dType b), Vector#(num, dType) vecIn) 
-//     provisos(Add#(num, a__, 2), Log#(num, numLog));
-//     // dType firstHalfRes;
-//     // dType secondHalfRes;
-//     // if (valueOf(firstHalf) >= 2) begin
-//     //     Vector#(firstHalf, dType) firstHalfVec = take(vecIn);
-//     //     firstHalfRes = reduceBalancedTree(func, firstHalfVec);
-//     // end
-//     // else begin
-//     //     firstHalfRes = head(vecIn);
-//     // end
-
-//     // if (valueOf(secondHalf) >= 2) begin
-//     //     Vector#(secondHalf, dType) secondHalfVec = drop(vecIn);
-//     //     secondHalfRes = reduceBalancedTree(func, secondHalfVec);
-//     // end
-//     // else begin
-//     //     secondHalfRes = last(vecIn);
-//     // end
-
-//     // return func(firstHalfRes, secondHalfRes);
-// endfunction
-
 typeclass ReduceBalancedTree#(numeric type num, type dType);
     function dType reduceBalancedTree(function dType op(dType a, dType b), Vector#(num, dType) vecIn);
 endtypeclass
@@ -184,8 +161,8 @@ typedef struct {
 
 
 interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
-    interface Put#(AxiStream#(dataByteNum, dataWidth)) axiStreamIn;
-    interface Get#(CrcResult#(crcWidth)) crcResultOut;
+    interface Put#(AxiStream#(dataByteNum, dataWidth)) crcReq; // crcReq
+    interface Get#(CrcResult#(crcWidth)) crcResp; // crcResp
 endinterface
 
 module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, dataWidth)) 
@@ -316,7 +293,7 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
         finalCrcBuf.enq(finalCrc);
     endrule
 
-    interface Put axiStreamIn;
+    interface Put crcReq;
         method Action put(AxiStream#(dataByteNum, dataWidth) stream);
             // swap endian
             stream.tData = swapEndian(stream.tData);
@@ -340,5 +317,5 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
         endmethod
     endinterface
 
-    interface Get crcResultOut = toGet(finalCrcBuf);
+    interface Get crcResp = toGet(finalCrcBuf);
 endmodule

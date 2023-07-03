@@ -86,23 +86,13 @@ def testCrcAxiStream():
     axi_byte_num = int(axi_width / 8)
 
     # set parameters used to run tests
-    toplevel = "mkCrcAxiStreamWrapper"
-    dut = f"mkCrc{crc_width}AxiStream{axi_width}"
+    toplevel = f"mkCrc{crc_width}RawAxiStream{axi_width}"
     test_func = f"testCrc{crc_width}AxiStream"
     module = os.path.splitext(os.path.basename(__file__))[0]
     test_dir = os.path.abspath(os.path.dirname(__file__))
     sim_build = os.path.join(test_dir, "build")
-    v_wrapper_file = os.path.join(test_dir, "verilog", f"{toplevel}.v")
-    v_dut_file = os.path.join(test_dir, "verilog/generated", f"{dut}.v")
-    verilog_sources = [v_wrapper_file, v_dut_file]
-
-    parameters = {}
-    parameters["DATA_WIDTH"] = str(axi_width)
-    parameters["KEEP_WIDTH"] = str(axi_byte_num)
-    parameters["CRC_WIDTH"] = str(crc_width)
-
-    defines = {}
-    defines[f"CRC{crc_width}_AXI{axi_width}"] = dut
+    v_top_file = os.path.join(test_dir, "generated", f"{toplevel}.v")
+    verilog_sources = [v_top_file]
 
     cocotb_test.simulator.run(
         toplevel=toplevel,
@@ -111,8 +101,6 @@ def testCrcAxiStream():
         python_search=test_dir,
         sim_build=sim_build,
         timescale="1ns/1ps",
-        parameters=parameters,
-        defines=defines,
         testcase=test_func,
         work_dir=test_dir,
     )

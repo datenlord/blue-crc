@@ -1,0 +1,4 @@
+
+
+read_verilog ./generated/Crc8AxiStream64/Crc8AxiStream64.v
+synth_xilinx -top mkCrc8AxiStream64 -flatten -abc9 -noclkbuf -noiopad

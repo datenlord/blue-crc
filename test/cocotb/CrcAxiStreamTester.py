@@ -8,9 +8,8 @@ import crc
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
-from cocotb.regression import TestFactory
 
-from cocotbext.axi import AxiStreamBus, AxiStreamSource, AxiStreamSink, AxiStreamFrame
+from cocotbext.axi import AxiStreamBus, AxiStreamSource, AxiStreamFrame
 from cocotbext.axi.stream import define_stream
 
 (
@@ -44,11 +43,13 @@ class CrcAxiStreamTester:
         self.ref_checksum_buf = Queue(maxsize=self.cases_num)
         self.ref_model = ref_model
 
+        self.clock = self.dut.CLK
+        self.reset = self.dut.RST_N
         self.axi_stream_src = AxiStreamSource(
-            AxiStreamBus.from_prefix(dut, "s_axi_stream"), dut.clk, dut.reset_n, False
+            AxiStreamBus.from_prefix(dut, "s_axis"), self.clock, self.reset, False
         )
         self.crc_stream_sink = CrcStreamSink(
-            CrcStreamBus.from_prefix(dut, "m_crc_stream"), dut.clk, dut.reset_n, False
+            CrcStreamBus.from_prefix(dut, "m_crc_stream"), self.clock, self.reset, False
         )
 
         self.axi_stream_src.log.setLevel(logging.WARNING)
@@ -61,21 +62,21 @@ class CrcAxiStreamTester:
             sink_rand = random.random()
             self.axi_stream_src.pause = src_rand < self.pause_rate
             self.crc_stream_sink.pause = sink_rand < self.pause_rate
-            await RisingEdge(self.dut.clk)
+            await RisingEdge(self.clock)
 
-    async def clock(self):
-        await cocotb.start(Clock(self.dut.clk, 10, "ns").start())
+    async def gen_clock(self):
+        await cocotb.start(Clock(self.clock, 10, "ns").start())
         self.log.info("Start dut clock")
 
-    async def reset(self):
-        self.dut.reset_n.setimmediatevalue(0)
-        await RisingEdge(self.dut.clk)
-        await RisingEdge(self.dut.clk)
-        await RisingEdge(self.dut.clk)
-        self.dut.reset_n.value = 1
-        await RisingEdge(self.dut.clk)
-        await RisingEdge(self.dut.clk)
-        await RisingEdge(self.dut.clk)
+    async def gen_reset(self):
+        self.reset.setimmediatevalue(0)
+        await RisingEdge(self.clock)
+        await RisingEdge(self.clock)
+        await RisingEdge(self.clock)
+        self.reset.value = 1
+        await RisingEdge(self.clock)
+        await RisingEdge(self.clock)
+        await RisingEdge(self.clock)
         self.log.info("Complete reset dut")
 
     def gen_random_test_case(self):
@@ -108,8 +109,8 @@ class CrcAxiStreamTester:
             assert dut_crc == ref_crc, "The results of dut and ref are inconsistent"
 
     async def runCrcAxiStreamTester(self):
-        await self.clock()
-        await self.reset()
+        await self.gen_clock()
+        await self.gen_reset()
         drive_thread = cocotb.start_soon(self.drive_dut_input())
         check_thread = cocotb.start_soon(self.check_dut_output())
         await cocotb.start(self.random_pause())

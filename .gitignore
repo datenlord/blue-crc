@@ -8,3 +8,4 @@ output/
 *.txt
 __pycache__
 logs/
+gen/

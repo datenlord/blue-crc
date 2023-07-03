@@ -140,7 +140,7 @@ if __name__ == "__main__":
     assert input_width % 8 == 0, f"The width of input data must be multiples of 8 bits."
     path = "."
     if len(sys.argv) > 3:
-        path = arg[4]
+        path = arg[3]
 
     input_byte_num = int(input_width / 8)
     file_prefix = os.path.join(path, "crc_tab")

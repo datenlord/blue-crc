@@ -61,7 +61,7 @@ module mkTestCrcAxiStream#(
     ) axiSender <- mkAxiStreamSender;
     CrcAxiStream#(crcWidth, axiByteNum, axiWidth) dutCrcModel <- mkCrcAxiStream(crcConf);
     
-    mkConnection(dutCrcModel.axiStreamIn, axiSender.axiStreamOut);
+    mkConnection(dutCrcModel.crcReq, axiSender.axiStreamOut);
 
     Reg#(Bool) isInit <- mkReg(False);
     Reg#(Bit#(cycleCountWidth)) cycle <- mkReg(0);
@@ -112,7 +112,7 @@ module mkTestCrcAxiStream#(
     rule checkDutOuput if (isInit && outputCaseCount < conf.caseNum);
         let refOutput = refOutputBuf.first;
         refOutputBuf.deq;
-        let dutOutput <- dutCrcModel.crcResultOut.get;
+        let dutOutput <- dutCrcModel.crcResp.get;
         $display("Revc case %d output: DUT=%x REF=%x", outputCaseCount,dutOutput, refOutput);
         immAssert(
             dutOutput == refOutput,
