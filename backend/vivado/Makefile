@@ -7,11 +7,11 @@ LIBSRCDIR = $(ROOT_DIR)/lib/blue-wrapper/src
 PWD = $(shell pwd)
 VLOGDIR = generated
 OUTPUTDIR = output
-ONLYSYNTH = 1
+ONLYSYNTH = 0
 CLK = main_clock
 
 CRC_WIDTH ?= 32
-AXI_WIDTH ?= 128
+AXI_WIDTH ?= 256
 TARGETFILE ?= $(LOCALSRCDIR)/Crc$(CRC_WIDTH)AxiStream.bsv
 TOPMODULE ?= mkCrc$(CRC_WIDTH)RawAxiStream$(AXI_WIDTH)
 SUB_VLOGDIR = $(VLOGDIR)/$(TOPMODULE)

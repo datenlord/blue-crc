@@ -24,7 +24,8 @@ module mkTestCrc8AxiStream64 (Empty);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -50,7 +51,8 @@ module mkTestCrc8AxiStream128 (Empty);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -76,7 +78,8 @@ module mkTestCrc8AxiStream256 (Empty);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -102,7 +105,8 @@ module mkTestCrc8AxiStream512 (Empty);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(

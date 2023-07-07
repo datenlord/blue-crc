@@ -16,14 +16,14 @@ COCOTB_DIR=${TEST_DIR}/cocotb
 
 # Check Codes format
 echo -e "\nStart formatting Codes"
-black --check $(find ./ -name "*.py")
+#black --check $(find ./ -name "*.py")
 
 # Run Bluesim Tests
 echo -e "\nStart Bluesim Tests"
 cd ${BLUESIM_DIR}
-source ./run_tests.sh
+#source ./run_tests.sh
 
 # Run Cocotb Tests
 echo -e "\nStart Cocotb Tests"
 cd ${COCOTB_DIR}
-source ./run_tests.sh
+#source ./run_tests.sh

@@ -17,7 +17,8 @@ module mkCrc16AxiStream64(Crc16AxiStream64);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16AxiStream64 crc16 <- mkCrcAxiStream(conf);
@@ -31,7 +32,8 @@ module mkCrc16RawAxiStream64(Crc16RawAxiStream64);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16RawAxiStream64 crc16 <- mkCrcRawAxiStream(conf);
@@ -47,7 +49,8 @@ module mkCrc16AxiStream128(Crc16AxiStream128);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16AxiStream128 crc16 <- mkCrcAxiStream(conf);
@@ -62,7 +65,8 @@ module mkCrc16RawAxiStream128(Crc16RawAxiStream128);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16RawAxiStream128 crc16 <- mkCrcRawAxiStream(conf);
@@ -78,7 +82,8 @@ module mkCrc16AxiStream256(Crc16AxiStream256);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16AxiStream256 crc16 <- mkCrcAxiStream(conf);
@@ -93,7 +98,8 @@ module mkCrc16RawAxiStream256(Crc16RawAxiStream256);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16RawAxiStream256 crc16 <- mkCrcRawAxiStream(conf);
@@ -109,7 +115,8 @@ module mkCrc16AxiStream512(Crc16AxiStream512);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16AxiStream512 crc16 <- mkCrcAxiStream(conf);
@@ -124,7 +131,8 @@ module mkCrc16RawAxiStream512(Crc16RawAxiStream512);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc16RawAxiStream512 crc16 <- mkCrcRawAxiStream(conf);

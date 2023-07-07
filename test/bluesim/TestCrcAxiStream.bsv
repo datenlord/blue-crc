@@ -5,70 +5,96 @@ import Vector :: *;
 import GetPut :: *;
 import Connectable :: *;
 
+import CrcDefines :: *;
+import CrcUtils :: *;
 import CrcAxiStream :: *;
 import TestUtils :: *;
 
-// Configuration of CRC Tester
-typedef struct {
-    Bit#(cycleCountWidth)  maxCycle;
-    Bit#(caseCountWidth)   caseNum;
-    CrcConfig#(crcWidth)   crcConfig;
-} TestCrcAxiStreamConfig#(
-    numeric type cycleCountWidth,
-    numeric type caseCountWidth,
-    numeric type caseByteNum,
-    numeric type crcWidth,
-    numeric type axiKeepWidth
-);
+import SemiFifo :: *;
 
-module mkTestCrcAxiStream#(
-    TestCrcAxiStreamConfig#(
-        cycleCountWidth, 
-        caseCountWidth, 
-        caseByteNum, 
-        crcWidth, 
-        axiKeepWidth
-    ) conf
-)(Empty) provisos(
-    Mul#(crcByteNum, BYTE_WIDTH, crcWidth),
-    Mul#(caseByteNum, BYTE_WIDTH, caseWidth),
-    Mul#(axiKeepWidth, BYTE_WIDTH, axiDataWidth),
-    ReduceBalancedTree#(axiKeepWidth, Bit#(crcWidth)),
-    ReduceBalancedTree#(crcByteNum, Bit#(crcWidth)),
+// `define CRC_WIDTH 32
+// `define AXI_KEEP_WIDTH 32
+//`define POLY 32'h04C11DB7
+// `define INIT_VAL 32'hFFFFFFFF
+// `define FINAL_XOR 32'hFFFFFFFF
+// `define REV_INPUT BIT_ORDER_REVERSE
+// `define REV_OUTPUT BIT_ORDER_REVERSE
+// `define MEM_FILE_PREFIX "crc_tab"
+// `define CRC_MODE CRC_MODE_RECV
 
-    Add#(8, a__, caseWidth),
-    Add#(8, e__, crcWidth),
-    Mul#(8, b__, TAdd#(axiDataWidth, crcWidth)),
-    Add#(caseByteNum, c__, TMul#(axiKeepWidth, TDiv#(caseWidth, axiDataWidth))),
-    Add#(caseWidth, d__, TMul#(TDiv#(caseWidth, axiDataWidth), axiDataWidth))
-);
-    let crcConf = conf.crcConfig;
-    Reg#(Bit#(caseCountWidth)) inputCaseCount <- mkReg(0);
-    Reg#(Bit#(caseCountWidth)) outputCaseCount <- mkReg(0);
-    Reg#(Bit#(TLog#(TAdd#(caseByteNum, 1)))) caseByteCount <- mkReg(0);
-    
-    CRC#(crcWidth) refCrcModel <- mkCRC(
-        crcConf.polynominal, 
-        crcConf.initVal, 
-        crcConf.finalXor, 
-        crcConf.reflectData, 
-        crcConf.reflectRemainder
-    );
-    FIFOF#(CrcResult#(crcWidth)) refOutputBuf <- mkFIFOF;
-    
-    AxiStreamSender#(
-        caseWidth, axiKeepWidth, AXIS_USER_WIDTH, caseCountWidth
-    ) axiSender <- mkAxiStreamSender;
-    CrcAxiStream#(crcWidth, axiKeepWidth, AXIS_USER_WIDTH) dutCrcModel <- mkCrcAxiStream(crcConf);
-    
-    mkConnection(dutCrcModel.crcReq, axiSender.axiStreamOut);
+typedef 512 TEST_CASE_NUM;
+typedef 16 CYCLE_COUNT_WIDTH;
+typedef 40000 MAX_CYCLE_NUM;
+typedef 16 CASE_COUNT_WIDTH;
 
+typedef 2 MAX_FRAG_NUM;
+typedef TMul#(MAX_FRAG_NUM, `AXI_KEEP_WIDTH) MAX_RAW_DATA_BYTE_NUM;
+typedef TMul#(MAX_RAW_DATA_BYTE_NUM, BYTE_WIDTH) MAX_RAW_DATA_WIDTH;
+typedef TLog#(TAdd#(MAX_RAW_DATA_BYTE_NUM, 1)) RAW_DATA_COUNT_WIDTH;
+
+typedef TDiv#(`CRC_WIDTH, BYTE_WIDTH) CRC_BYTE_NUM;
+
+module mkTestCrcAxiStream(Empty);
+    Integer maxCycleNum = valueOf(MAX_CYCLE_NUM);
+    Integer testCaseNum = valueOf(TEST_CASE_NUM);
+    Integer maxRawDataByteNum = valueOf(MAX_RAW_DATA_BYTE_NUM);
+    Integer crcByteNum = valueOf(CRC_BYTE_NUM);
+    
+    // Common Signals
     Reg#(Bool) isInit <- mkReg(False);
-    Reg#(Bit#(cycleCountWidth)) cycle <- mkReg(0);
-    Randomize#(Bit#(caseWidth)) caseDataRand <- mkGenericRandomizer;
+    Reg#(Bit#(CYCLE_COUNT_WIDTH)) cycle <- mkReg(0);
+    Reg#(Bit#(CASE_COUNT_WIDTH)) inputCaseCount <- mkReg(0);
+    Reg#(Bit#(CASE_COUNT_WIDTH)) outputCaseCount <- mkReg(0);
+    
+    // Random Signals
+    Randomize#(Bit#(RAW_DATA_COUNT_WIDTH)) randRawDataByteNum <- mkGenericRandomizer;
+    Randomize#(Bit#(MAX_RAW_DATA_WIDTH)) randRawData <- mkGenericRandomizer;
+    
+
+    // DUT and REF Model
+    Bit#(`CRC_WIDTH) polynominal = `POLY;
+    Bit#(`CRC_WIDTH) initVal = `INIT_VAL;
+    Bit#(`CRC_WIDTH) finalXor = `FINAL_XOR;
+    IsReverseBitOrder revInput = `REV_INPUT;
+    IsReverseBitOrder revOutput = `REV_OUTPUT;
+    String memFilePrefix = `MEM_FILE_PREFIX;
+    CrcMode crcMode = `CRC_MODE;
+
+    CRC#(`CRC_WIDTH) refCrcModel <- mkCRC(
+        polynominal, 
+        initVal,
+        finalXor,
+        revInput == BIT_ORDER_REVERSE, 
+        revOutput == BIT_ORDER_REVERSE
+    );
+
+    CrcConfig#(`CRC_WIDTH) crcConf = CrcConfig {
+        polynominal: `POLY,
+        initVal: `INIT_VAL,
+        finalXor: `FINAL_XOR,
+        revInput: `REV_INPUT,
+        revOutput: `REV_OUTPUT,
+        memFilePrefix: `MEM_FILE_PREFIX,
+        crcMode: `CRC_MODE
+    };
+
+    FIFOF#(Bit#(`CRC_WIDTH)) refCrcOutputBuf <- mkFIFOF;
+    FIFOF#(Bit#(MAX_RAW_DATA_WIDTH)) rawDataBuf <- mkFIFOF;
+    FIFOF#(Bit#(RAW_DATA_COUNT_WIDTH)) rawDataByteNumBuf <- mkFIFOF;
+    AxiStreamPipeOut#(`AXI_KEEP_WIDTH) dutAxiStreamInput <- mkAxiStreamSender(
+        "AxiStreamSender",
+        convertFifoToPipeOut(rawDataByteNumBuf),
+        convertFifoToPipeOut(rawDataBuf)
+    );
+    let dutCrcOutput <- mkCrcAxiStreamPipeOut(
+        crcConf,
+        dutAxiStreamInput
+    );
+
     
     rule doRandInit if (!isInit);
-        caseDataRand.cntrl.init;
+        randRawDataByteNum.cntrl.init;
+        randRawData.cntrl.init;
         refCrcModel.clear;
         isInit <= True;
     endrule
@@ -76,54 +102,76 @@ module mkTestCrcAxiStream#(
     rule doCycleCount if (isInit);
         cycle <= cycle + 1;
         immAssert(
-            cycle != conf.maxCycle,
-            "Testbench timeout assertion @ mkTestUdpEthRxTx",
-            $format("Cycle count can't overflow %d", conf.maxCycle)
+            cycle <= fromInteger(maxCycleNum),
+            "Testbench timeout assertion @ mkTestCrcAxiStream",
+            $format("Cycle count can't overflow %d", maxCycleNum)
         );
-        $display("\nCycle %d -----------------------------------", cycle);
+        $display("\nCycle %d ----------------------------------------", cycle);
     endrule
     
-    Reg#(Bit#(caseWidth)) tempCaseData <- mkRegU;
-    rule genTestCase if (isInit && inputCaseCount < conf.caseNum);
-        if (caseByteCount == 0) begin
-            let randData <- caseDataRand.next;
-            tempCaseData <= randData;
-            refCrcModel.add(truncateLSB(randData));
-            caseByteCount <= caseByteCount + 1;
-            $display("Gen random test case: %x", randData);
+    Reg#(Bit#(RAW_DATA_COUNT_WIDTH)) rawDataByteCounter <- mkReg(0);
+    Reg#(Bit#(MAX_RAW_DATA_WIDTH)) tempRawData <- mkRegU;
+    Reg#(Bit#(RAW_DATA_COUNT_WIDTH)) tempRawDataByteNum <- mkRegU;
+    rule genDutInput if (isInit && inputCaseCount < fromInteger(testCaseNum));
+        if (rawDataByteCounter == 0) begin
+            let rawData <- randRawData.next;
+            let rawDataByteNum <- randRawDataByteNum.next;
+            Bit#(RAW_DATA_COUNT_WIDTH) maxCaseByteNum = fromInteger(maxRawDataByteNum);
+            
+            if (crcMode == CRC_MODE_RECV) begin
+                maxCaseByteNum = maxCaseByteNum - fromInteger(crcByteNum);
+            end
+            if (rawDataByteNum > maxCaseByteNum) begin
+                rawDataByteNum = maxCaseByteNum;
+            end
+            tempRawData <= bitMask(rawData, (1 << rawDataByteNum) - 1);
+            tempRawDataByteNum <= rawDataByteNum;
+            $display("input case %d raw data byte num %d", inputCaseCount, rawDataByteNum);
+            if (rawDataByteNum > 0) begin
+                refCrcModel.add(truncate(rawData));
+                rawDataByteCounter <= rawDataByteCounter + 1;
+            end
         end
-        else if (caseByteCount < fromInteger(valueOf(caseByteNum))) begin
-            Vector#(caseByteNum, Byte) caseDataVec = unpack(tempCaseData);
-            caseDataVec = reverse(caseDataVec);
-            refCrcModel.add(caseDataVec[caseByteCount]);
-            caseByteCount <= caseByteCount + 1;
-            $display("Add Ref Crc32: %x", caseDataVec[caseByteCount]);
+        else if (rawDataByteCounter < tempRawDataByteNum) begin
+            Vector#(MAX_RAW_DATA_BYTE_NUM, Byte) rawDataVec = unpack(tempRawData);
+            refCrcModel.add(rawDataVec[rawDataByteCounter]);
+            rawDataByteCounter <= rawDataByteCounter + 1;
+            $display("Case %d Add Ref Crc32: %x", inputCaseCount, rawDataVec[rawDataByteCounter]);
         end
         else begin
-            caseByteCount <= 0;
+            rawDataByteCounter <= 0;
             inputCaseCount <= inputCaseCount + 1;
-            axiSender.rawDataIn.put(tempCaseData);
-            let refCheckSum <- refCrcModel.complete;
-            refOutputBuf.enq(refCheckSum);
-            $display("Generate %d input case: %x crc: %x", inputCaseCount, tempCaseData, refCheckSum);
+            let refCrc <- refCrcModel.complete;
+
+            let dataByteNum = tempRawDataByteNum;
+            if (crcMode == CRC_MODE_RECV) begin
+                dataByteNum = dataByteNum + fromInteger(crcByteNum);
+            end
+            rawDataBuf.enq(tempRawData);
+            rawDataByteNumBuf.enq(dataByteNum);
+            
+            refCrcOutputBuf.enq(refCrc);
+            $display("Generate %d input case: %x crc: %x", inputCaseCount, tempRawData, refCrc);
         end
     endrule
 
-    rule checkDutOuput if (isInit && outputCaseCount < conf.caseNum);
-        let refOutput = refOutputBuf.first;
-        refOutputBuf.deq;
-        let dutOutput <- dutCrcModel.crcResp.get;
-        $display("Revc case %d output: DUT=%x REF=%x", outputCaseCount,dutOutput, refOutput);
+    rule checkDutOuput if (isInit && outputCaseCount < fromInteger(testCaseNum));
+        let dutCrc = dutCrcOutput.first;
+        dutCrcOutput.deq;
+        let refCrc = refCrcOutputBuf.first;
+        refCrcOutputBuf.deq;
+
+        $display("Case %d DUT Output: %x", outputCaseCount, dutCrc);
         immAssert(
-            dutOutput == refOutput,
-            "Check meta data from CrcAxiStream @ mkCrcAxiStream",
-            $format("The output of dut and ref are inconsistent")
+            dutCrc == refCrc,
+            "The output of DUT and REF are inconsistent @ mkTestCrcAxiStream",
+            $format("DUT: %x REF: %x", dutCrc, refCrc)
         );
         outputCaseCount <= outputCaseCount + 1;
     endrule
 
-    rule doFinish if (outputCaseCount == conf.caseNum);
-        $display("Pass all %d test cases!", conf.caseNum);
+    rule doFinish if (outputCaseCount == fromInteger(testCaseNum));
+        $display("Pass all %d test cases!", testCaseNum);
         $display("0");
         $finish;
     endrule

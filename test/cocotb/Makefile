@@ -12,6 +12,7 @@ LIST_VERILOG_TCL = $(SCRIPTS_DIR)/listVlogFiles.tcl
 VLOGDIR = verilog
 VLOGFILE = $(VLOGDIR)/$(TOP).v
 TABDIR = .
+CRC_TYPE = gen
 
 MACROFLAGS ?=
 
@@ -23,7 +24,7 @@ verilog:
 	bluetcl $(LIST_VERILOG_TCL) -bdir $(BUILDDIR) -vdir $(BUILDDIR) $(TOP) $(TOP) | grep -i '\.v' | xargs -I {} cat {} >> $(VLOGFILE)
 	
 table:
-	python3 $(LOCALSRCDIR)/gen_crc_tab.py $(CRC_WIDTH) $(AXI_WIDTH) $(TABDIR)
+	python3 $(LOCALSRCDIR)/gen_crc_tab.py $(CRC_WIDTH) $(AXI_WIDTH) $(TABDIR) $(CRC_TYPE)
 
 cocotb: verilog table
 	python3 testCrcAxiStream.py $(CRC_WIDTH) $(AXI_WIDTH)

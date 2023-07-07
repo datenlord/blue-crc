@@ -17,7 +17,8 @@ module mkCrc8AxiStream64(Crc8AxiStream64);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8AxiStream64 crc8 <- mkCrcAxiStream(conf);
@@ -32,7 +33,8 @@ module mkCrc8RawAxiStream64(Crc8RawAxiStream64);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8RawAxiStream64 crc8 <- mkCrcRawAxiStream(conf);
@@ -48,7 +50,8 @@ module mkCrc8AxiStream128(Crc8AxiStream128);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8AxiStream128 crc8 <- mkCrcAxiStream(conf);
@@ -63,7 +66,8 @@ module mkCrc8RawAxiStream128(Crc8RawAxiStream128);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8RawAxiStream128 crc8 <- mkCrcRawAxiStream(conf);
@@ -79,7 +83,8 @@ module mkCrc8AxiStream256(Crc8AxiStream256);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8AxiStream256 crc8 <- mkCrcAxiStream(conf);
@@ -94,7 +99,8 @@ module mkCrc8RawAxiStream256(Crc8RawAxiStream256);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8RawAxiStream256 crc8 <- mkCrcRawAxiStream(conf);
@@ -110,7 +116,8 @@ module mkCrc8AxiStream512(Crc8AxiStream512);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8AxiStream512 crc8 <- mkCrcAxiStream(conf);
@@ -125,7 +132,8 @@ module mkCrc8RawAxiStream512(Crc8RawAxiStream512);
         initVal    : fromInteger(valueOf(CRC8_CCITT_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC8_CCITT_FINAL_XOR)),
         reflectData: False,
-        reflectRemainder: False
+        reflectRemainder: False,
+        memFilePrefix: "crc_gen_tab"
     };
 
     Crc8RawAxiStream512 crc8 <- mkCrcRawAxiStream(conf);

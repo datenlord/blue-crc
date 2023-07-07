@@ -31,6 +31,7 @@ class CrcLookUpTable:
         final_xor: bytes,
         rev_input: bool,
         rev_output: bool,
+        crc_type: str
     ):
         self.byte_order = "big"
         self.polynominal = polynominal
@@ -38,8 +39,10 @@ class CrcLookUpTable:
         self.final_xor = final_xor
         self.rev_input = rev_input
         self.rev_output = rev_output
+        self.crc_type = crc_type
         self.byte_num = len(polynominal)
         self.bit_width = self.byte_num * BYTE_WIDTH
+        
         assert len(init_val) == len(
             polynominal
         ), "The width of initial value doesn't match that of polynomial"
@@ -55,7 +58,7 @@ class CrcLookUpTable:
 
         if self.rev_input:
             byte_int = bits_reverse(byte_int, BYTE_WIDTH)
-
+        
         byte_int = byte_int << (self.bit_width - BYTE_WIDTH)
         crc_int = crc_int ^ byte_int
 
@@ -82,16 +85,21 @@ class CrcLookUpTable:
         crc_table = []
 
         for i in range(BYTE_MAX_VAL + 1):
-            crc = self.add_byte_to_crc(i, self.init_val)
-            for j in range(offset):
-                crc = self.add_byte_to_crc(0, crc)
-
+            if offset < 4:
+                crc = i << (8*offset)
+                crc = crc.to_bytes(self.byte_num, self.byte_order)
+            else:
+                crc = self.add_byte_to_crc(i, self.init_val)
+                for j in range(offset - 4):
+                    crc = self.add_byte_to_crc(0, crc)
+            
             crc = self.crc_output(crc)
             crc_table.append(crc)
 
         return crc_table
 
-    def gen_crc_tab_file(self, file_prefix: str, offset_range: range):
+    def gen_crc_tab_file(self, offset_range: range):
+        file_prefix = f"crc_tab"
         for i in offset_range:
             file_name = file_prefix + f"_{i}.mem"
             file = open(file_name, "w")
@@ -110,6 +118,7 @@ if __name__ == "__main__":
         final_xor=b"\x00",
         rev_input=False,
         rev_output=False,
+        crc_type="gen"
     )
     crc16_tab = CrcLookUpTable(
         polynominal=b"\x80\x05",
@@ -117,6 +126,7 @@ if __name__ == "__main__":
         final_xor=b"\x00\x00",
         rev_input=False,
         rev_output=False,
+        crc_type="gen"
     )
     crc32_tab = CrcLookUpTable(
         polynominal=b"\x04\xC1\x1D\xB7",
@@ -124,6 +134,7 @@ if __name__ == "__main__":
         final_xor=b"\x00\x00\x00\x00",
         rev_input=False,
         rev_output=False,
+        crc_type="gen"
     )
 
     crc_width_opt = (8, 16, 32)
@@ -132,16 +143,23 @@ if __name__ == "__main__":
 
     assert len(sys.argv) >= 3, "The number of input arguments is incorrect."
     arg = sys.argv
+    
     crc_width = int(arg[1])
     assert (
         crc_width in crc_width_opt
     ), f"Table generation of {crc_width}-bit hasn't been supported."
+    
     input_width = int(arg[2])
     assert input_width % 8 == 0, f"The width of input data must be multiples of 8 bits."
+    
     path = "."
     if len(sys.argv) > 3:
         path = arg[3]
+    
+    if len(sys.argv) > 4:
+        if (arg[4] == "gen") | (arg[4] == "chk"):
+            print(arg[4])
+            crc_tab_map[crc_width].crc_type = arg[4]
 
     input_byte_num = int(input_width / 8)
-    file_prefix = os.path.join(path, "crc_tab")
-    crc_tab_map[crc_width].gen_crc_tab_file(file_prefix, range(input_byte_num))
+    crc_tab_map[crc_width].gen_crc_tab_file(range(input_byte_num + 4))

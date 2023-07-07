@@ -24,7 +24,8 @@ module mkTestCrc16AxiStream64 (Empty);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -50,7 +51,8 @@ module mkTestCrc16AxiStream128 (Empty);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -76,7 +78,8 @@ module mkTestCrc16AxiStream256 (Empty);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(
@@ -102,7 +105,8 @@ module mkTestCrc16AxiStream512 (Empty);
         initVal    : fromInteger(valueOf(CRC16_ANSI_INIT_VAL)),
         finalXor   : fromInteger(valueOf(CRC16_ANSI_FINAL_XOR)),
         reflectData: True,
-        reflectRemainder: True
+        reflectRemainder: True,
+        memFilePrefix: "crc_gen_tab"
     };
 
     TestCrcAxiStreamConfig#(

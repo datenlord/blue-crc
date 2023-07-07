@@ -48,7 +48,7 @@ class CrcAxiStreamConfig:
     def gen_table(self):
         root_path = test_dir = os.path.abspath(".")
         gen_path = os.path.join(root_path, "gen")
-        file_prefix = os.path.join(gen_path, "crc_tab")
+        file_prefix = os.path.join(gen_path, "crc_gen_tab")
 
         tab_init_val = 0
         tab_final_xor = 0
