@@ -4,8 +4,9 @@ include $(SCRIPTS_DIR)/Makefile.base
 LOCALSRCDIR = $(ROOT_DIR)/src
 LIBSRCDIR = $(ROOT_DIR)/lib/blue-wrapper/src
 
+# CRC Configurations
+JSON_CONF_FILE = $(SCRIPTS_DIR)/config/crc_32_256_recv.json
 CRC_WIDTH = 32
-AXI_WIDTH = 256
 AXI_KEEP_WIDTH = 32
 POLY = 79764919
 INIT_VAL = 4294967295
@@ -29,11 +30,11 @@ FILE ?= TestCrcAxiStream.bsv
 TOP ?= mkTestCrcAxiStream
 
 SIMEXE = $(BUILDDIR)/$(TOP).exe
-CRC_TAB_SCRIPTS = $(LOCALSRCDIR)/gen_crc_tab.py
+CRC_TAB_SCRIPTS = $(SCRIPTS_DIR)/gen_crc_tab.py
 TABDIR = .
 
 table:
-	python3 $(CRC_TAB_SCRIPTS) $(CRC_WIDTH) $(AXI_WIDTH) $(TABDIR) $(CRC_TYPE)
+	python3 $(CRC_TAB_SCRIPTS) $(JSON_CONF_FILE) $(TABDIR)
 
 compile:
 	mkdir -p $(BUILDDIR)

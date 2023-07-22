@@ -4,40 +4,62 @@ include $(SCRIPTS_DIR)/Makefile.base
 LOCALSRCDIR = $(ROOT_DIR)/src
 LIBSRCDIR = $(ROOT_DIR)/lib/blue-wrapper/src
 
-PWD = $(shell pwd)
-VLOGDIR = generated
+
+FILE = CrcAxiStreamCustom.bsv
+TOPMODULE = mkCrcRawAxiStreamCustom
+TABDIR = .
+VLOGDIR = verilog
+VLOGFILE = $(VLOGDIR)/$(TOPMODULE).v
+LIST_VERILOG_TCL = $(SCRIPTS_DIR)/listVlogFiles.tcl
+
+# CRC Configurations
+JSON_CONF_FILE = $(SCRIPTS_DIR)/config/crc_32_256_recv.json
+CRC_WIDTH = 32
+AXI_KEEP_WIDTH = 32
+POLY = 79764919
+INIT_VAL = 4294967295
+FINAL_XOR = 4294967295
+REV_INPUT = BIT_ORDER_REVERSE
+REV_OUTPUT = BIT_ORDER_REVERSE
+MEM_FILE_PREFIX = crc_tab
+CRC_MODE = CRC_MODE_RECV
+
+MACROFLAGS = -D CRC_WIDTH=$(CRC_WIDTH) \
+			 -D AXI_KEEP_WIDTH=$(AXI_KEEP_WIDTH) \
+			 -D POLY=$(POLY) \
+			 -D INIT_VAL=$(INIT_VAL) \
+			 -D FINAL_XOR=$(FINAL_XOR) \
+			 -D REV_INPUT=$(REV_INPUT) \
+			 -D REV_OUTPUT=$(REV_OUTPUT) \
+			 -D MEM_FILE_PREFIX="\"$(MEM_FILE_PREFIX)\"" \
+			 -D CRC_MODE=$(CRC_MODE)
+
+# vivado config
+XDCDIR = $(shell pwd)
 OUTPUTDIR = output
+SUB_OUTPUTDIR = 
 ONLYSYNTH = 0
 CLK = main_clock
 
-CRC_WIDTH ?= 32
-AXI_WIDTH ?= 256
-TARGETFILE ?= $(LOCALSRCDIR)/Crc$(CRC_WIDTH)AxiStream.bsv
-TOPMODULE ?= mkCrc$(CRC_WIDTH)RawAxiStream$(AXI_WIDTH)
-SUB_VLOGDIR = $(VLOGDIR)/$(TOPMODULE)
-SUB_OUTPUTDIR = $(OUTPUTDIR)/$(TOPMODULE)
-TABDIR = .
-
 export TOP = $(TOPMODULE)
-export RTL = $(SUB_VLOGDIR)
-export XDC = $(PWD)
-export OUTPUT = $(SUB_OUTPUTDIR)
+export RTL = $(VLOGDIR)
+export XDC = $(XDCDIR)
+export OUTPUT = $(OUTPUTDIR)/$(SUB_OUTPUTDIR)
 export SYNTHONLY = $(ONLYSYNTH)
 export CLOCKS = $(CLK)
 
 table:
-	python3 $(LOCALSRCDIR)/gen_crc_tab.py $(CRC_WIDTH) $(AXI_WIDTH) $(TABDIR)
+	mkdir -p $(TABDIR)
+	python3 $(SCRIPTS_DIR)/gen_crc_tab.py $(JSON_CONF_FILE) $(TABDIR)
 
-compile:
+verilog: table
 	mkdir -p $(BUILDDIR)
-	bsc -elab -sim -verbose $(BLUESIMFLAGS) $(DEBUGFLAGS) $(DIRFLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
+	bsc -elab $(VERILOGFLAGS) $(DIRFLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(TRANSFLAGS) $(MACROFLAGS) -g $(TOPMODULE) $(LOCALSRCDIR)/$(FILE)
+	mkdir -p $(VLOGDIR)
+	echo "" > $(VLOGFILE)
+	bluetcl $(LIST_VERILOG_TCL) -bdir $(BUILDDIR) -vdir $(BUILDDIR) $(TOPMODULE) $(TOPMODULE) | grep -i '\.v' | xargs -I {} cat {} >> $(VLOGFILE)
 
-verilog: compile
-	mkdir -p $(SUB_VLOGDIR)
-	bsc $(VERILOGFLAGS) $(DIRFLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
-	bluetcl $(SCRIPTS_DIR)/listVlogFiles.tcl -bdir $(BUILDDIR) -vdir $(BUILDDIR) $(TOPMODULE) $(TOPMODULE) | grep -i '\.v' | xargs -I {} cp {} $(SUB_VLOGDIR)
-
-vivado: verilog table
+vivado: verilog
 	vivado -mode batch -source non_project_build.tcl 2>&1 | tee ./run.log
 
 clean:

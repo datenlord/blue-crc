@@ -1,14 +1,16 @@
-import logging
 import os
+import sys
+import json
 import random
+import logging
 from queue import Queue
+
 import crc
-
-
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 
+import cocotb_test.simulator
 from cocotbext.axi import AxiStreamBus, AxiStreamSource, AxiStreamFrame
 from cocotbext.axi.stream import define_stream
 
@@ -28,7 +30,8 @@ class CrcAxiStreamTester:
         cases_num: int,
         case_max_size: int,
         pause_rate: float,
-        ref_model: crc.Calculator,
+        crc_conf: crc.Configuration,
+        crc_mode: str,
     ):
         assert pause_rate < 1, "Pause rate is out of range"
         self.dut = dut
@@ -41,7 +44,9 @@ class CrcAxiStreamTester:
         self.pause_rate = pause_rate
         self.ref_rawdata_buf = Queue(maxsize=self.cases_num)
         self.ref_checksum_buf = Queue(maxsize=self.cases_num)
-        self.ref_model = ref_model
+        self.crc_conf = crc_conf
+        self.ref_model = crc.Calculator(crc_conf)
+        self.crc_mode = crc_mode
 
         self.clock = self.dut.CLK
         self.reset = self.dut.RST_N
@@ -83,6 +88,10 @@ class CrcAxiStreamTester:
         data_size = random.randint(1, self.case_max_size)
         raw_data = random.randbytes(data_size)
         check_sum = self.ref_model.checksum(raw_data)
+        if self.crc_mode == "CRC_MODE_RECV":
+            crc_byte_num = int(self.crc_conf.width / 8)
+            zero_bytes = crc_byte_num * b"\x00"
+            raw_data = raw_data + zero_bytes
         return (raw_data, check_sum)
 
     async def drive_dut_input(self):
@@ -117,3 +126,64 @@ class CrcAxiStreamTester:
         self.log.info("Start testing!")
         await check_thread
         self.log.info(f"Pass all {self.cases_num} successfully")
+
+
+@cocotb.test(timeout_time=5000000, timeout_unit="ns")
+async def runCrcAxiStreamTester(dut):
+    json_file_path = os.getenv("JSON_CONF_FILE")
+    with open(json_file_path) as json_file:
+        crc_config = json.load(json_file)
+
+    crc_width = crc_config["crc_width"]
+    polynomial = int(crc_config["polynomial"], 16)
+    init_value = int(crc_config["init_value"], 16)
+    final_xor = int(crc_config["final_xor"], 16)
+    reverse_input = crc_config["reverse_input"]
+    reverse_output = crc_config["reverse_output"]
+    crc_mode = crc_config["crc_mode"]
+
+    crc_conf = crc.Configuration(
+        width=crc_width,
+        polynomial=polynomial,
+        init_value=init_value,
+        final_xor_value=final_xor,
+        reverse_input=reverse_input,
+        reverse_output=reverse_output,
+    )
+    tester = CrcAxiStreamTester(
+        dut=dut,
+        cases_num=1000,
+        case_max_size=1024,
+        pause_rate=0.3,
+        crc_conf=crc_conf,
+        crc_mode=crc_mode,
+    )
+    await tester.runCrcAxiStreamTester()
+
+
+def testCrcAxiStream():
+    assert len(sys.argv) == 2
+    json_file_path = sys.argv[1]
+
+    # set parameters used to run tests
+    toplevel = "mkCrcRawAxiStreamCustom"
+    module = os.path.splitext(os.path.basename(__file__))[0]
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    sim_build = os.path.join(test_dir, "build")
+    v_top_file = os.path.join(test_dir, "verilog", f"{toplevel}.v")
+    verilog_sources = [v_top_file]
+    extra_env = {"JSON_CONF_FILE": json_file_path}
+
+    cocotb_test.simulator.run(
+        toplevel=toplevel,
+        module=module,
+        verilog_sources=verilog_sources,
+        python_search=test_dir,
+        sim_build=sim_build,
+        timescale="1ns/1ps",
+        extra_env=extra_env,
+    )
+
+
+if __name__ == "__main__":
+    testCrcAxiStream()

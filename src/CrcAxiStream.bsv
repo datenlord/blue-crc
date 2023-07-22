@@ -10,15 +10,6 @@ import SemiFifo :: *;
 import BusConversion :: *;
 import AxiStreamTypes :: *;
 
-// Parameters that define a specific CRC hardware calculator
-// input data width (8b bit)
-// crc width (8n bit)
-// polynominal
-// final xor
-// reflect input data
-// reflect remainder
-//
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////// Definitions of signals passed through pipelines
@@ -87,10 +78,6 @@ module mkCrcAxiStreamPipeOut#(
     Reg#(Bool) isFirstFlag <- mkReg(True);
     Reg#(CrcResult#(crcWidth)) interCrcRes <- mkReg(conf.initVal);
     Vector#(interByteNum, RegFile#(Byte, CrcResult#(crcWidth))) crcTabVec <- genWithM(mkCrcRegFileTable(0, conf.memFilePrefix));
-    // Vector#(crcByteNum, RegFile#(Byte, CrcResult#(crcWidth))) interCrcTabVec <- genWithM(mkCrcRegFileTable(tabOffset, conf.memFilePrefix));
-    // Vector#(crcByteNum, RegFile#(Byte, CrcResult#(crcWidth))) interCrcTabVec2 <- genWithM(mkCrcRegFileTable(tabOffset-4, conf.memFilePrefix));
-    // Vector#(axiKeepWidth, RegFile#(Byte, CrcResult#(crcWidth))) crcTabVec2 <- genWithM(mkCrcRegFileTable(4, conf.memFilePrefix));
-
 
     rule preProcess;
         let axiStream = crcReq.first;
@@ -129,7 +116,7 @@ module mkCrcAxiStreamPipeOut#(
         let shiftAmt = preProcessRes.ctrlSig.shiftAmt;
         preProcessRes.data = byteRightShift(data, shiftAmt);
         shiftInputResBuf.enq(preProcessRes);
-        $display("shiftInput Result: %x", preProcessRes.data);
+        //$display("shiftInput Result: %x", preProcessRes.data);
     endrule
 
     rule readCrcTab;
@@ -160,7 +147,7 @@ module mkCrcAxiStreamPipeOut#(
             ctrlSig: readCrcTabRes.ctrlSig
         };
         reduceCrcResBuf.enq(reduceCrcRes);
-        $display("reduce temp Crc: %x", crcRes);
+        //$display("reduce temp Crc: %x", crcRes);
     endrule
 
     rule accuCrc;
@@ -199,7 +186,7 @@ module mkCrcAxiStreamPipeOut#(
         if (reduceCrcRes.ctrlSig.isLast) begin
             accuCrcResBuf.enq(accuCrcRes);
             interCrcRes <= conf.initVal;
-            $display("Accumulate Res:", fshow(accuCrcRes));
+            //$display("Accumulate Res:", fshow(accuCrcRes));
         end
         else begin
             interCrcRes <= nextInterCrc;
@@ -211,7 +198,7 @@ module mkCrcAxiStreamPipeOut#(
         accuCrcResBuf.deq;
         
         Bit#(TAdd#(axiDataWidth, crcWidth)) interCrc = {accuCrcRes.interCrc, 0};
-        let shiftAmt = accuCrcRes.ctrlSig.shiftAmt;
+        Bit#(TAdd#(TLog#(TAdd#(1, axiKeepWidth)), 1)) shiftAmt = zeroExtend(accuCrcRes.ctrlSig.shiftAmt);
         if (conf.crcMode == CRC_MODE_RECV) begin
             if (accuCrcRes.ctrlSig.isFirst && accuCrcRes.ctrlSig.isLast) begin
                 shiftAmt = shiftAmt + fromInteger(valueOf(crcByteNum));
@@ -223,7 +210,7 @@ module mkCrcAxiStreamPipeOut#(
             interCrc: interCrc
         };
         shiftInterCrcResBuf.enq(shiftInterCrcRes);
-        $display("shiftInterCrcRes: %x", interCrc);
+        //$display("shiftInterCrcRes: %x", interCrc);
     endrule
 
     rule readInterCrcTab;
@@ -247,7 +234,7 @@ module mkCrcAxiStreamPipeOut#(
         readInterCrcTabResBuf.deq;
         let interCrc = reduceBalancedTree(addCrc, readInterCrcTabRes.interCrc);
         let finalCrc = interCrc ^ readInterCrcTabRes.curCrc;
-        $display("final CRC: %x", finalCrc);
+        //$display("final CRC: %x", finalCrc);
         if (conf.revOutput == BIT_ORDER_REVERSE) begin
             finalCrc = reverseBits(finalCrc);
         end

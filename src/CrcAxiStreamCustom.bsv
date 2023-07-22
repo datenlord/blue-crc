@@ -11,11 +11,11 @@ module mkCrcAxiStreamCustom(CrcAxiStreamCustom);
         revInput: `REV_INPUT,
         revOutput: `REV_OUTPUT,
         memFilePrefix: `MEM_FILE_PREFIX,
-        CrcMode: `CRC_MODE
+        crcMode: `CRC_MODE
     };
 
     CrcAxiStreamCustom crc <- mkCrcAxiStream(conf);
-    retrun crc;
+    return crc;
 endmodule
 
 
@@ -29,7 +29,7 @@ module mkCrcRawAxiStreamCustom(CrcRawAxiStreamCustom);
         revInput: `REV_INPUT,
         revOutput: `REV_OUTPUT,
         memFilePrefix: `MEM_FILE_PREFIX,
-        CrcMode: `CRC_MODE
+        crcMode: `CRC_MODE
     };
 
     CrcRawAxiStreamCustom crc <- mkCrcRawAxiStream(conf);
