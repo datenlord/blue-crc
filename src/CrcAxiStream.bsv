@@ -1,252 +1,192 @@
 import FIFOF :: *;
-import RegFile :: *;
 import Vector :: *;
-import Printf :: *;
 import GetPut :: *;
+import RegFile :: *;
 
-// Parameters that define a specific CRC calculator
-// input data width (8b bit)
-// crc width (8n bit)
-// polynominal
-// final xor
-// reflect input data
-// reflect remainder
+import CrcUtils :: *;
+import CrcDefines :: *;
 
-////////////////////////////////////////////////////////////////////////////////
-////////// Definition of some common types
-////////////////////////////////////////////////////////////////////////////////
-typedef 8 BYTE_WIDTH;
-typedef Bit#(BYTE_WIDTH) Byte;
-
-typedef Bit#(width) CrcResult#(numeric type width);
-
-typedef struct {
-    Bit#(dataWidth) tData;
-    Bit#(keepWidth) tKeep;
-    Bool tUser;
-    Bool tLast;
-} AxiStream#(numeric type keepWidth, numeric type dataWidth) deriving(Bits, Eq, FShow);
-
-typedef struct {
-    Bit#(width) polynominal;
-    Bit#(width) initVal;
-    Bit#(width) finalXor;
-    Bool reflectData;
-    Bool reflectRemainder;
-} CrcConfig#(numeric type width) deriving(Bits, Eq, FShow);
-
-typedef  8 CRC8_WIDTH;
-typedef 16 CRC16_WIDTH;
-typedef 32 CRC32_WIDTH;
-
-typedef  64 AXIS64_WIDTH;
-typedef 128 AXIS128_WIDTH;
-typedef 256 AXIS256_WIDTH;
-typedef 512 AXIS512_WIDTH;
-
-typedef TDiv#(AXIS64_WIDTH,  BYTE_WIDTH)  AXIS64_KEEP_WIDTH;
-typedef TDiv#(AXIS128_WIDTH, BYTE_WIDTH) AXIS128_KEEP_WIDTH;
-typedef TDiv#(AXIS256_WIDTH, BYTE_WIDTH) AXIS256_KEEP_WIDTH;
-typedef TDiv#(AXIS512_WIDTH, BYTE_WIDTH) AXIS512_KEEP_WIDTH;
-
-typedef 8'h07        CRC8_CCITT_POLY;
-typedef 16'h8005     CRC16_ANSI_POLY;
-typedef 32'h04C11DB7 CRC32_IEEE_POLY;
-
-typedef 8'h00        CRC8_CCITT_INIT_VAL;
-typedef 16'h0000     CRC16_ANSI_INIT_VAL;
-typedef 32'hFFFFFFFF CRC32_IEEE_INIT_VAL;
-
-typedef 8'h00       CRC8_CCITT_FINAL_XOR;
-typedef 16'h0000     CRC16_ANSI_FINAL_XOR;
-typedef 32'hFFFFFFFF CRC32_IEEE_FINAL_XOR;
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////// Implementation of utility functions used in the design
-////////////////////////////////////////////////////////////////////////////////
-module mkCrcRegFileTable#(Integer offset)(Integer idx, RegFile#(Byte, CrcResult#(width)) ifc);
-    // $display("crc lookup tab offset: %d", offset);
-    let initFile = sprintf("crc_tab_%d.mem", offset + idx);
-    RegFile#(Byte, CrcResult#(width)) regFile <- mkRegFileFullLoad(initFile);
-    return regFile;
-endmodule
-
-function CrcResult#(width) addCrc(CrcResult#(width) crc1, CrcResult#(width) crc2);
-    return crc1 ^ crc2;
-endfunction
-
-function Bit#(width) swapEndian(Bit#(width) data) provisos(Mul#(BYTE_WIDTH, byteNum, width));
-    Vector#(byteNum, Byte) dataVec = unpack(data);
-    return pack(reverse(dataVec));
-endfunction
-
-function Bit#(width) reverseBitsOfEachByte(Bit#(width) data) provisos(Mul#(BYTE_WIDTH, byteNum, width));
-    Vector#(byteNum, Byte) dataVec = unpack(data);
-    Vector#(byteNum, Byte) revDataVec = map(reverseBits, dataVec);
-    return pack(revDataVec);
-endfunction
-
-function Bit#(width) byteRightShift(Bit#(width) dataIn, Bit#(shiftAmtWidth) shiftAmt) 
-    provisos(Mul#(BYTE_WIDTH, byteNum, width));
-    Vector#(byteNum, Byte) dataInVec = unpack(dataIn);
-    dataInVec = shiftOutFrom0(0, dataInVec, shiftAmt);
-    return pack(dataInVec);
-endfunction
-
-function Bit#(width) byteLeftShift(Bit#(width) dataIn, Bit#(shiftAmtWidth) shiftAmt) 
-    provisos(Mul#(BYTE_WIDTH, byteNum, width));
-    
-    Vector#(byteNum, Byte) dataInVec = unpack(dataIn);
-    dataInVec = shiftOutFromN(0, dataInVec, shiftAmt);
-    return pack(dataInVec);
-endfunction
-
-typeclass ReduceBalancedTree#(numeric type num, type dType);
-    function dType reduceBalancedTree(function dType op(dType a, dType b), Vector#(num, dType) vecIn);
-endtypeclass
-
-instance ReduceBalancedTree#(2, dType);
-    function reduceBalancedTree(op, vecIn) = op(vecIn[0], vecIn[1]);
-endinstance
-
-instance ReduceBalancedTree#(1, dType);
-    function reduceBalancedTree(op, vecIn) = vecIn[0];
-endinstance
-
-instance ReduceBalancedTree#(num, dType) 
-    provisos(Div#(num, 2, firstHalf), Add#(firstHalf, secondHalf, num),
-             ReduceBalancedTree#(firstHalf, dType), ReduceBalancedTree#(secondHalf, dType));
-    function reduceBalancedTree(op, vecIn);
-        Vector#(firstHalf, dType) firstHalfVec   = take(vecIn);
-        Vector#(secondHalf, dType) secondHalfVec = drop(vecIn);
-        let firstHalfRes  = reduceBalancedTree(op, firstHalfVec);
-        let secondHalfRes = reduceBalancedTree(op, secondHalfVec);
-        return op(firstHalfRes, secondHalfRes);
-    endfunction
-endinstance
+import SemiFifo :: *;
+import BusConversion :: *;
+import AxiStreamTypes :: *;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////// Definitions of signals passed through pipelines
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
-    Bool tLast;
-    Bit#(TLog#(TAdd#(1, byteWidth))) shiftAmt;
-} CrcCtrlSig#(numeric type byteWidth) deriving(Bits, FShow);
+    Bool isLast;
+    Bool isFirst;
+    Bit#(TLog#(TAdd#(1, axiKeepWidth))) shiftAmt;
+} CrcCtrlSig#(numeric type axiKeepWidth) deriving(Bits, FShow);
 
 typedef struct {
-    Bit#(width) data;
-    CrcCtrlSig#(byteNum) ctrlSig;
-} PreProcessRes#(numeric type byteNum, numeric type width) deriving(Bits, FShow);
+    Bit#(TMul#(axiKeepWidth, BYTE_WIDTH)) data;
+    CrcCtrlSig#(axiKeepWidth) ctrlSig;
+} PreProcessRes#(numeric type axiKeepWidth) deriving(Bits, FShow);
 
-typedef PreProcessRes#(byteNum, width) ShiftInputRes#(numeric type byteNum, numeric type width);
+typedef PreProcessRes#(axiKeepWidth) ShiftInputRes#(numeric type axiKeepWidth);
+
+typedef struct {
+    Vector#(axiKeepWidth, CrcResult#(crcWidth)) tempCrcVec;
+    CrcCtrlSig#(axiKeepWidth) ctrlSig;
+} ReadCrcTabRes#(numeric type axiKeepWidth, numeric type crcWidth) deriving(Bits, FShow);
 
 typedef struct {
     CrcResult#(crcWidth) crcRes;
-    CrcCtrlSig#(dataByteNum) ctrlSig;
-} ReduceCrcRes#(numeric type dataByteNum, numeric type crcWidth) deriving(Bits, FShow);
+    CrcCtrlSig#(axiKeepWidth) ctrlSig;
+} ReduceCrcRes#(numeric type axiKeepWidth, numeric type crcWidth) deriving(Bits, FShow);
 
 typedef struct {
     CrcResult#(crcWidth) curCrc;
     CrcResult#(crcWidth) interCrc;
-    CrcCtrlSig#(dataByteNum) ctrlSig;
-} AccumulateRes#(numeric type dataByteNum, numeric type crcWidth) deriving(Bits, FShow);
+    CrcCtrlSig#(axiKeepWidth) ctrlSig;
+} AccuCrcRes#(numeric type axiKeepWidth, numeric type crcWidth) deriving(Bits, FShow);
 
 typedef struct {
     CrcResult#(crcWidth) curCrc;
-    CrcResult#(crcWidth) remainder;
-    Bit#(dataWidth) interCrc;
-} ShiftInterCrcRes#(numeric type dataWidth, numeric type crcWidth) deriving(Bits, FShow);
+    Bit#(TAdd#(axiDataWidth, crcWidth)) interCrc;
+} ShiftInterCrcRes#(numeric type axiDataWidth, numeric type crcWidth) deriving(Bits, FShow);
+
+typedef struct {
+    Vector#(interByteNum, CrcResult#(crcWidth)) interCrc;
+    CrcResult#(crcWidth) curCrc;
+} ReadInterCrcTabRes#(numeric type interByteNum, numeric type crcWidth) deriving(Bits, FShow);
 
 
-interface CrcAxiStream#(numeric type crcWidth, numeric type dataByteNum, numeric type dataWidth);
-    interface Put#(AxiStream#(dataByteNum, dataWidth)) crcReq; // crcReq
-    interface Get#(CrcResult#(crcWidth)) crcResp; // crcResp
-endinterface
+module mkCrcAxiStreamPipeOut#(
+    CrcConfig#(crcWidth) conf,
+    AxiStreamPipeOut#(axiKeepWidth) crcReq
+)(CrcResultPipeOut#(crcWidth)) provisos(
+    Mul#(BYTE_WIDTH, axiKeepWidth, axiDataWidth), 
+    Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
+    Mul#(BYTE_WIDTH, interByteNum, TAdd#(axiDataWidth, crcWidth)),
+    ReduceBalancedTree#(axiKeepWidth, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(crcByteNum, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(interByteNum, CrcResult#(crcWidth))
+);
 
-module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataByteNum, dataWidth)) 
-    provisos(
-        Mul#(BYTE_WIDTH, dataByteNum, dataWidth), 
-        Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
-        Mul#(BYTE_WIDTH, interByteNum, TAdd#(dataWidth, crcWidth)),
-        ReduceBalancedTree#(dataByteNum, CrcResult#(crcWidth)),
-        ReduceBalancedTree#(crcByteNum, CrcResult#(crcWidth))
-    );
+    FIFOF#(PreProcessRes#(axiKeepWidth)) preProcessResBuf <- mkFIFOF;
+    FIFOF#(ShiftInputRes#(axiKeepWidth)) shiftInputResBuf <- mkFIFOF;
+    FIFOF#(ReadCrcTabRes#(axiKeepWidth, crcWidth)) readCrcTabResBuf <- mkFIFOF;
+    FIFOF#(ReduceCrcRes#(axiKeepWidth, crcWidth)) reduceCrcResBuf <- mkFIFOF;
+    FIFOF#(AccuCrcRes#(axiKeepWidth, crcWidth)) accuCrcResBuf <- mkFIFOF;
+    FIFOF#(ShiftInterCrcRes#(axiDataWidth, crcWidth)) shiftInterCrcResBuf <- mkFIFOF;
+    FIFOF#(ReadInterCrcTabRes#(interByteNum, crcWidth)) readInterCrcTabResBuf <- mkFIFOF;
+    FIFOF#(CrcResult#(crcWidth)) finalCrcResBuf <- mkFIFOF;
 
-    FIFOF#(PreProcessRes#(dataByteNum, dataWidth)) preProcessBuf <- mkFIFOF;
-    FIFOF#(ShiftInputRes#(dataByteNum, dataWidth)) shiftInputBuf <- mkFIFOF;
-    FIFOF#(Vector#(dataByteNum, CrcResult#(crcWidth))) readTabBuf <- mkFIFOF;
-    FIFOF#(CrcCtrlSig#(dataByteNum)) ctrlSigBuf <- mkFIFOF;
-    FIFOF#(ReduceCrcRes#(dataByteNum, crcWidth)) reduceCrcBuf <- mkFIFOF;
-    FIFOF#(AccumulateRes#(dataByteNum, crcWidth)) accuCrcBuf <- mkFIFOF;
-    FIFOF#(ShiftInterCrcRes#(dataWidth, crcWidth)) shiftInterBuf <- mkFIFOF;
-    FIFOF#(Vector#(dataByteNum, CrcResult#(crcWidth))) interReadTabBuf <- mkFIFOF;
-    FIFOF#(CrcResult#(crcWidth)) currentCrcBuf <- mkFIFOF;
-    FIFOF#(CrcResult#(crcWidth)) finalCrcBuf <- mkFIFOF;
-
+    Reg#(Bool) isFirstFlag <- mkReg(True);
     Reg#(CrcResult#(crcWidth)) interCrcRes <- mkReg(conf.initVal);
-    Vector#(dataByteNum, RegFile#(Byte, CrcResult#(crcWidth))) crcTabVec <- genWithM(mkCrcRegFileTable(0));
-    Integer tabOffset = valueOf(dataByteNum) - valueOf(crcByteNum);
-    Vector#(crcByteNum, RegFile#(Byte, CrcResult#(crcWidth))) interCrcTabVec <- genWithM(mkCrcRegFileTable(tabOffset));
+    Vector#(interByteNum, RegFile#(Byte, CrcResult#(crcWidth))) crcTabVec <- genWithM(mkCrcRegFileTable(0, conf.memFilePrefix));
+
+    rule preProcess;
+        let axiStream = crcReq.first;
+        crcReq.deq;
+        // swap endian
+        axiStream.tData = bitMask(axiStream.tData, axiStream.tKeep);
+        axiStream.tData = swapEndian(axiStream.tData);
+        axiStream.tKeep = reverseBits(axiStream.tKeep);
     
+        // reverse bits of each input byte 
+        if (conf.revInput == BIT_ORDER_REVERSE) begin
+            axiStream.tData = reverseBitsOfEachByte(axiStream.tData);
+        end
+
+        // TODO: modify count Zero logic
+        let extraByteNum = countZerosLSB(axiStream.tKeep);
+        
+        CrcCtrlSig#(axiKeepWidth) ctrlSig = CrcCtrlSig {
+            isFirst : isFirstFlag,
+            isLast  : axiStream.tLast,
+            shiftAmt: pack(extraByteNum)
+        };
+        PreProcessRes#(axiKeepWidth) preProcessRes = PreProcessRes {
+            data: axiStream.tData,
+            ctrlSig: ctrlSig
+        };
+
+        isFirstFlag <= axiStream.tLast;
+        preProcessResBuf.enq(preProcessRes);
+    endrule
+
     rule shiftInput;
-        let preProcessRes = preProcessBuf.first;
-        preProcessBuf.deq;
+        let preProcessRes = preProcessResBuf.first;
+        preProcessResBuf.deq;
         let data = preProcessRes.data;
         let shiftAmt = preProcessRes.ctrlSig.shiftAmt;
         preProcessRes.data = byteRightShift(data, shiftAmt);
-        shiftInputBuf.enq(preProcessRes);
+        shiftInputResBuf.enq(preProcessRes);
+        //$display("shiftInput Result: %x", preProcessRes.data);
     endrule
 
-    rule readCrcTable;
-        let shiftInputRes = shiftInputBuf.first;
-        shiftInputBuf.deq;
-        Vector#(dataByteNum, Byte) dataVec = unpack(shiftInputRes.data);
-        Vector#(dataByteNum, CrcResult#(crcWidth)) tempCrcVec = newVector;
-        for (Integer i = 0; i < valueOf(dataByteNum); i = i + 1) begin
-            tempCrcVec[i] = crcTabVec[i].sub(dataVec[i]);
+    rule readCrcTab;
+        let shiftInputRes = shiftInputResBuf.first;
+        shiftInputResBuf.deq;
+        Vector#(axiKeepWidth, Byte) dataVec = unpack(shiftInputRes.data);
+        Vector#(axiKeepWidth, CrcResult#(crcWidth)) tempCrcVec = newVector;
+        Integer tabOffset = 0;
+        if (conf.crcMode == CRC_MODE_SEND) tabOffset = valueOf(crcByteNum);
+        for (Integer i = 0; i < valueOf(axiKeepWidth); i = i + 1) begin
+            tempCrcVec[i] = crcTabVec[tabOffset + i].sub(dataVec[i]);
+            //$display("read tab %d result: %x", i, tempCrcVec[i]);
         end
-        readTabBuf.enq(tempCrcVec);
-        ctrlSigBuf.enq(shiftInputRes.ctrlSig);
-    endrule
-
-    rule reduceTempCrc;
-        let tempCrcVec = readTabBuf.first;
-        readTabBuf.deq;
-        let ctrlSig = ctrlSigBuf.first;
-        ctrlSigBuf.deq;
-
-        let crcRes = reduceBalancedTree(addCrc, tempCrcVec);
-        ReduceCrcRes#(dataByteNum, crcWidth) reduceCrcRes = ReduceCrcRes {
-            crcRes: crcRes,
-            ctrlSig: ctrlSig
+        let readCrcTabRes = ReadCrcTabRes {
+            tempCrcVec: tempCrcVec,
+            ctrlSig: shiftInputRes.ctrlSig
         };
-        reduceCrcBuf.enq(reduceCrcRes);
+        readCrcTabResBuf.enq(readCrcTabRes);
     endrule
 
-    rule accumulateCrc;
-        let reduceCrcRes = reduceCrcBuf.first;
-        reduceCrcBuf.deq;
+    rule reduceCrc;
+        let readCrcTabRes = readCrcTabResBuf.first;
+        readCrcTabResBuf.deq;
+
+        let crcRes = reduceBalancedTree(addCrc, readCrcTabRes.tempCrcVec);
+        ReduceCrcRes#(axiKeepWidth, crcWidth) reduceCrcRes = ReduceCrcRes {
+            crcRes: crcRes,
+            ctrlSig: readCrcTabRes.ctrlSig
+        };
+        reduceCrcResBuf.enq(reduceCrcRes);
+        //$display("reduce temp Crc: %x", crcRes);
+    endrule
+
+    rule accuCrc;
+        let reduceCrcRes = reduceCrcResBuf.first;
+        reduceCrcResBuf.deq;
 
         Vector#(crcByteNum, Byte) interCrcVec = unpack(interCrcRes);
         Vector#(crcByteNum, CrcResult#(crcWidth)) interTempCrcVec = newVector;
-        for (Integer i = 0; i < valueOf(crcByteNum); i = i + 1) begin
-            interTempCrcVec[i] = interCrcTabVec[i].sub(interCrcVec[i]);
+        Integer tabOffset = valueOf(axiKeepWidth);
+        if (conf.crcMode == CRC_MODE_RECV) begin
+            Integer initTabOffset = tabOffset - valueOf(crcByteNum);
+            for (Integer i = 0; i < valueOf(crcByteNum); i = i + 1) begin
+                if (reduceCrcRes.ctrlSig.isFirst) begin
+                    interTempCrcVec[i] = crcTabVec[i + initTabOffset].sub(interCrcVec[i]);
+                end
+                else begin
+                    interTempCrcVec[i] = crcTabVec[i + tabOffset].sub(interCrcVec[i]);
+                end
+            end
+        end
+        else begin
+            for (Integer i = 0; i < valueOf(crcByteNum); i = i + 1) begin
+                interTempCrcVec[i] = crcTabVec[i + tabOffset].sub(interCrcVec[i]);
+            end
         end
 
         let nextInterCrc = reduceBalancedTree(addCrc, interTempCrcVec);
         nextInterCrc = nextInterCrc ^ reduceCrcRes.crcRes;
 
-        AccumulateRes#(dataByteNum, crcWidth) accuCrcRes = AccumulateRes {
+        AccuCrcRes#(axiKeepWidth, crcWidth) accuCrcRes = AccuCrcRes {
             curCrc  : reduceCrcRes.crcRes,
             interCrc: interCrcRes,
             ctrlSig : reduceCrcRes.ctrlSig
         };
 
-        if (reduceCrcRes.ctrlSig.tLast) begin
-            accuCrcBuf.enq(accuCrcRes);
+        if (reduceCrcRes.ctrlSig.isLast) begin
+            accuCrcResBuf.enq(accuCrcRes);
             interCrcRes <= conf.initVal;
+            //$display("Accumulate Res:", fshow(accuCrcRes));
         end
         else begin
             interCrcRes <= nextInterCrc;
@@ -254,68 +194,104 @@ module mkCrcAxiStream#(CrcConfig#(crcWidth) conf)(CrcAxiStream#(crcWidth, dataBy
     endrule
 
     rule shiftInterCrc;
-        let accuCrcRes = accuCrcBuf.first;
-        accuCrcBuf.deq;
+        let accuCrcRes = accuCrcResBuf.first;
+        accuCrcResBuf.deq;
         
-        Bit#(TAdd#(dataWidth, crcWidth)) interCrc = {accuCrcRes.interCrc, 0};
-        interCrc = byteRightShift(interCrc, accuCrcRes.ctrlSig.shiftAmt);
+        Bit#(TAdd#(axiDataWidth, crcWidth)) interCrc = {accuCrcRes.interCrc, 0};
+        Bit#(TAdd#(TLog#(TAdd#(1, axiKeepWidth)), 1)) shiftAmt = zeroExtend(accuCrcRes.ctrlSig.shiftAmt);
+        if (conf.crcMode == CRC_MODE_RECV) begin
+            if (accuCrcRes.ctrlSig.isFirst && accuCrcRes.ctrlSig.isLast) begin
+                shiftAmt = shiftAmt + fromInteger(valueOf(crcByteNum));
+            end
+        end
+        interCrc = byteRightShift(interCrc, shiftAmt);
         let shiftInterCrcRes = ShiftInterCrcRes {
             curCrc: accuCrcRes.curCrc,
-            remainder: truncate(interCrc),
-            interCrc: truncateLSB(interCrc)
+            interCrc: interCrc
         };
-        shiftInterBuf.enq(shiftInterCrcRes);
+        shiftInterCrcResBuf.enq(shiftInterCrcRes);
+        //$display("shiftInterCrcRes: %x", interCrc);
     endrule
 
     rule readInterCrcTab;
-        let shiftInterCrcRes = shiftInterBuf.first;
-        shiftInterBuf.deq;
-        Vector#(dataByteNum, Byte) interCrcVec = unpack(shiftInterCrcRes.interCrc);
-        Vector#(dataByteNum, CrcResult#(crcWidth)) tempCrcVec = newVector;
-        for (Integer i = 0; i < valueOf(dataByteNum); i = i + 1) begin
-            tempCrcVec[i] = crcTabVec[i].sub(interCrcVec[i]);
+        let shiftInterCrcRes = shiftInterCrcResBuf.first;
+        shiftInterCrcResBuf.deq;
+        Vector#(interByteNum, Byte) interCrcVec = unpack(shiftInterCrcRes.interCrc);
+        Vector#(interByteNum, CrcResult#(crcWidth)) readCrcTabResVec = newVector;
+        for (Integer i = 0; i < valueOf(interByteNum); i = i + 1) begin
+            readCrcTabResVec[i] = crcTabVec[i].sub(interCrcVec[i]);
+            //$display("ReadInterCrcTab%d: %x", i, readCrcTabResVec[i]);
         end
-        interReadTabBuf.enq(tempCrcVec);
-        currentCrcBuf.enq(shiftInterCrcRes.curCrc ^ shiftInterCrcRes.remainder);
+        let readInterCrcTabRes = ReadInterCrcTabRes {
+            interCrc: readCrcTabResVec,
+            curCrc: shiftInterCrcRes.curCrc
+        };
+        readInterCrcTabResBuf.enq(readInterCrcTabRes);
     endrule
 
     rule reduceFinalCrc;
-        let tempCrcVec = interReadTabBuf.first;
-        interReadTabBuf.deq;
-        let curCrc = currentCrcBuf.first;
-        currentCrcBuf.deq;
-        let interCrc = reduceBalancedTree(addCrc, tempCrcVec);
-        let finalCrc = interCrc ^ curCrc;
-        if (conf.reflectRemainder) begin
+        let readInterCrcTabRes = readInterCrcTabResBuf.first;
+        readInterCrcTabResBuf.deq;
+        let interCrc = reduceBalancedTree(addCrc, readInterCrcTabRes.interCrc);
+        let finalCrc = interCrc ^ readInterCrcTabRes.curCrc;
+        //$display("final CRC: %x", finalCrc);
+        if (conf.revOutput == BIT_ORDER_REVERSE) begin
             finalCrc = reverseBits(finalCrc);
         end
         finalCrc = finalCrc ^ conf.finalXor;
-        finalCrcBuf.enq(finalCrc);
+        finalCrcResBuf.enq(finalCrc);
     endrule
 
-    interface Put crcReq;
-        method Action put(AxiStream#(dataByteNum, dataWidth) stream);
-            // swap endian
-            stream.tData = swapEndian(stream.tData);
-            stream.tKeep = reverseBits(stream.tKeep);
-            // reverse bits of Byte
-            if (conf.reflectData) begin
-                stream.tData = reverseBitsOfEachByte(stream.tData);
-            end
-            // TODO: modify count Zero logic
-            let extraByteNum = countZerosLSB(stream.tKeep);
-
-            CrcCtrlSig#(dataByteNum) ctrlSig = CrcCtrlSig {
-                tLast: stream.tLast,
-                shiftAmt: pack(extraByteNum)
-            };
-            PreProcessRes#(dataByteNum, dataWidth) preProcessRes = PreProcessRes {
-                data: stream.tData,
-                ctrlSig: ctrlSig
-            };
-            preProcessBuf.enq(preProcessRes);
-        endmethod
-    endinterface
-
-    interface Get crcResp = toGet(finalCrcBuf);
+    return convertFifoToPipeOut(finalCrcResBuf);
 endmodule
+
+
+interface CrcAxiStream#(numeric type crcWidth, numeric type axiKeepWidth);
+    interface AxiStreamPut#(axiKeepWidth) crcReq;
+    interface CrcResultGet#(crcWidth) crcResp;
+endinterface
+
+
+module mkCrcAxiStream#(
+    CrcConfig#(crcWidth) conf
+)(CrcAxiStream#(crcWidth, axiKeepWidth)) provisos(
+    Mul#(BYTE_WIDTH, axiKeepWidth, axiDataWidth), 
+    Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
+    Mul#(BYTE_WIDTH, interByteNum, TAdd#(axiDataWidth, crcWidth)),
+    ReduceBalancedTree#(axiKeepWidth, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(crcByteNum, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(interByteNum, CrcResult#(crcWidth))
+);
+    FIFOF#(AxiStream#(axiKeepWidth, AXIS_USER_WIDTH)) crcReqBuf <- mkFIFOF;
+    let crcReqPipeOut = convertFifoToPipeOut(crcReqBuf);
+    let crcRespPipeOut <- mkCrcAxiStreamPipeOut(conf, crcReqPipeOut);
+
+    interface Put crcReq = toPut(crcReqBuf);
+    interface Get crcResp = toGet(crcRespPipeOut);
+endmodule
+
+
+interface CrcRawAxiStream#(numeric type crcWidth, numeric type axiKeepWidth);
+    (* prefix = "s_axis" *)
+    interface RawAxiStreamSlave#(axiKeepWidth, AXIS_USER_WIDTH) rawCrcReq;
+    (* prefix = "m_crc_stream" *)
+    interface RawBusMaster#(CrcResult#(crcWidth)) rawCrcResp;
+endinterface
+
+module mkCrcRawAxiStream#(CrcConfig#(crcWidth) conf)(CrcRawAxiStream#(crcWidth, axiKeepWidth)) provisos(
+    Mul#(BYTE_WIDTH, axiKeepWidth, dataWidth), 
+    Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
+    Mul#(BYTE_WIDTH, interByteNum, TAdd#(dataWidth, crcWidth)),
+    ReduceBalancedTree#(axiKeepWidth, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(crcByteNum, CrcResult#(crcWidth)),
+    ReduceBalancedTree#(interByteNum, CrcResult#(crcWidth))
+);
+
+    CrcAxiStream#(crcWidth, axiKeepWidth) crcAxiStream <- mkCrcAxiStream(conf);
+    let rawAxiStreamSlave <- mkPutToRawAxiStreamSlave(crcAxiStream.crcReq, CF);
+    let rawBusMaster <- mkGetToRawBusMaster(crcAxiStream.crcResp, CF);
+    
+    interface RawAxiStreamRecv rawCrcReq = rawAxiStreamSlave;
+    interface RawBusSend rawCrcResp = rawBusMaster;
+endmodule
+

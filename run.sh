@@ -18,12 +18,7 @@ COCOTB_DIR=${TEST_DIR}/cocotb
 echo -e "\nStart formatting Codes"
 black --check $(find ./ -name "*.py")
 
-# Run Bluesim Tests
-echo -e "\nStart Bluesim Tests"
-cd ${BLUESIM_DIR}
-source ./run_tests.sh
-
 # Run Cocotb Tests
-echo -e "\nStart Cocotb Tests"
+echo -e "\nStart Cocotb Testbenches"
 cd ${COCOTB_DIR}
-source ./run_tests.sh
+python3 run_tests.py
