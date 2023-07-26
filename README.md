@@ -77,14 +77,10 @@ To calculate the CRC of each 8-bit piece, we don't have to implement real circui
 
 However, the parallel scheme proposed above is still impractical for hardware implementation. For real circuit design, the width of input data bus is usually fixed and original data is split into multiple frames and sent into the component serially. So the hardware needs to compute the CRC result in an accumulative manner. In each cycle, the circuit calculates CRC checksum of input frame based on Theorem 1, and then adds it to the intermediate CRC result of former frames. 
 
-The addition of CRC result of current input frame and the intermediate CRC result is based on Theorem 2. Assume that original data is transmitted in big-endian byte order, the width of the input bus is 256-bit, $A(x)$ represents data received in this cycle and $A'(x)$ represents data received in former cycles. And we need to add $CRC[A(x)]$ to the intermediate result $CRC[A'(x)]$ to get $ CRC[A'(x)x^{256} + A(x)]$. Based on Theorem 2, we can derive the equation below:
-$$
-CRC[A'(x)x^{256}+A(x)]=CRC[A'(x)x^{256}]+CRC[A(x)]=CRC[CRC[A'(x)]\times x^{256}]+CRC[A(x)]
-$$
+The addition of CRC result of current input frame and the intermediate CRC result is based on Theorem 2. Assume that original data is transmitted in big-endian byte order, the width of the input bus is 256-bit, $A(x)$ represents data received in this cycle and $A'(x)$ represents data received in former cycles. And we need to add $CRC[A(x)]$ to the intermediate result $CRC[A'(x)]$ to get $CRC[A'(x)x^{256} + A(x)]$. Based on Theorem 2, we can derive the equation below:
+$$CRC[A'(x)x^{256}+A(x)]=CRC[A'(x)x^{256}]+CRC[A(x)]=CRC[CRC[A'(x)]\times x^{256}]+CRC[A(x)]$$
 The equation shows that we need to shift the intermediate CRC result left, perform CRC calculation on it again and then add it with the CRC result of current frame. And the CRC calculation of the intermediate checksum can also be implemented using hardware lookup tables. For accumulation, there's one more case to consider, that is, the width of raw data may not just be multiples of 256-bit, so you cannot directly use the above formula for accumulation when processing the last input frame. Instead we need to dynamically calculate the width of valid data in the last frame of original data. Assume that the valid width of the last frame data is m, the accumulation is done following the equation below:
-$$
-CRC[A'(x)x^m+A(x)]=CRC[CRC[A'(x)]\times x^m]+CRC[A(x)]
-$$
+$$CRC[A'(x)x^m+A(x)]=CRC[CRC[A'(x)]\times x^m]+CRC[A(x)]$$
 
 
 ## Hardware Architecture

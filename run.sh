@@ -14,6 +14,9 @@ TEST_DIR=${ROOT_DIR}/test
 BLUESIM_DIR=${TEST_DIR}/bluesim
 COCOTB_DIR=${TEST_DIR}/cocotb
 
+# Update submodules
+git submodule update --init --recursive
+
 # Check Codes format
 echo -e "\nStart formatting Codes"
 black --check $(find ./ -name "*.py")
