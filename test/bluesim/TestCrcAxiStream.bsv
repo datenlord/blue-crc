@@ -81,12 +81,12 @@ module mkTestCrcAxiStream(Empty);
     FIFOF#(Bit#(`CRC_WIDTH)) refCrcOutputBuf <- mkFIFOF;
     FIFOF#(Bit#(MAX_RAW_DATA_WIDTH)) rawDataBuf <- mkFIFOF;
     FIFOF#(Bit#(RAW_DATA_COUNT_WIDTH)) rawDataByteNumBuf <- mkFIFOF;
-    AxiStreamPipeOut#(`AXI_KEEP_WIDTH) dutAxiStreamInput <- mkAxiStreamSender(
+    AxiStreamFifoOut#(`AXI_KEEP_WIDTH) dutAxiStreamInput <- mkAxiStreamSender(
         "AxiStreamSender",
-        convertFifoToPipeOut(rawDataByteNumBuf),
-        convertFifoToPipeOut(rawDataBuf)
+        convertFifoToFifoOut(rawDataByteNumBuf),
+        convertFifoToFifoOut(rawDataBuf)
     );
-    let dutCrcOutput <- mkCrcAxiStreamPipeOut(
+    let dutCrcOutput <- mkCrcAxiStreamFifoOut(
         crcConf,
         dutAxiStreamInput
     );

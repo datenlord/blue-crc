@@ -34,8 +34,8 @@ typedef struct {
     CrcMode crcMode;
 } CrcConfig#(numeric type crcWidth) deriving(Eq, FShow);
 
-typedef PipeOut#(CrcResult#(crcWidth)) CrcResultPipeOut#(numeric type crcWidth);
-typedef PipeOut#(AxiStream#(keepWidth, AXIS_USER_WIDTH)) AxiStreamPipeOut#(numeric type keepWidth); 
+typedef FifoOut#(CrcResult#(crcWidth)) CrcResultFifoOut#(numeric type crcWidth);
+typedef FifoOut#(AxiStream#(keepWidth, AXIS_USER_WIDTH)) AxiStreamFifoOut#(numeric type keepWidth); 
 typedef Get#(CrcResult#(crcWidth)) CrcResultGet#(numeric type crcWidth);
 typedef Put#(AxiStream#(keepWidth, AXIS_USER_WIDTH)) AxiStreamPut#(numeric type keepWidth);
 

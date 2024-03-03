@@ -54,10 +54,10 @@ typedef struct {
 } ReadInterCrcTabRes#(numeric type interByteNum, numeric type crcWidth) deriving(Bits, FShow);
 
 
-module mkCrcAxiStreamPipeOut#(
+module mkCrcAxiStreamFifoOut#(
     CrcConfig#(crcWidth) conf,
-    AxiStreamPipeOut#(axiKeepWidth) crcReq
-)(CrcResultPipeOut#(crcWidth)) provisos(
+    AxiStreamFifoOut#(axiKeepWidth) crcReq
+)(CrcResultFifoOut#(crcWidth)) provisos(
     Mul#(BYTE_WIDTH, axiKeepWidth, axiDataWidth), 
     Mul#(BYTE_WIDTH, crcByteNum, crcWidth),
     Mul#(BYTE_WIDTH, interByteNum, TAdd#(axiDataWidth, crcWidth)),
@@ -242,7 +242,7 @@ module mkCrcAxiStreamPipeOut#(
         finalCrcResBuf.enq(finalCrc);
     endrule
 
-    return convertFifoToPipeOut(finalCrcResBuf);
+    return convertFifoToFifoOut(finalCrcResBuf);
 endmodule
 
 
@@ -263,11 +263,11 @@ module mkCrcAxiStream#(
     ReduceBalancedTree#(interByteNum, CrcResult#(crcWidth))
 );
     FIFOF#(AxiStream#(axiKeepWidth, AXIS_USER_WIDTH)) crcReqBuf <- mkFIFOF;
-    let crcReqPipeOut = convertFifoToPipeOut(crcReqBuf);
-    let crcRespPipeOut <- mkCrcAxiStreamPipeOut(conf, crcReqPipeOut);
+    let crcReqFifoOut = convertFifoToFifoOut(crcReqBuf);
+    let crcRespFifoOut <- mkCrcAxiStreamFifoOut(conf, crcReqFifoOut);
 
     interface Put crcReq = toPut(crcReqBuf);
-    interface Get crcResp = toGet(crcRespPipeOut);
+    interface Get crcResp = toGet(crcRespFifoOut);
 endmodule
 
 

@@ -103,9 +103,9 @@ endfunction
 
 module mkAxiStreamSender#(
     String instanceName,
-    PipeOut#(Bit#(maxRawByteNumWidth)) rawByteNumIn,
-    PipeOut#(Bit#(maxRawDataWidth)) rawDataIn
-)(PipeOut#(AxiStream#(axiKeepWidth, axiUsrWidth))) provisos(
+    FifoOut#(Bit#(maxRawByteNumWidth)) rawByteNumIn,
+    FifoOut#(Bit#(maxRawDataWidth)) rawDataIn
+)(FifoOut#(AxiStream#(axiKeepWidth, axiUsrWidth))) provisos(
     Mul#(axiKeepWidth, BYTE_WIDTH, axiDataWidth),
     Mul#(maxFragNum, axiKeepWidth, maxRawByteNum),
     Mul#(maxRawByteNum, BYTE_WIDTH, maxRawDataWidth),
@@ -147,5 +147,5 @@ module mkAxiStreamSender#(
         $display("%s: send %8d fragment %s", instanceName, fragCounter, fshow(axiStream));
     endrule
     
-    return convertFifoToPipeOut(outputBuf);
+    return convertFifoToFifoOut(outputBuf);
 endmodule
