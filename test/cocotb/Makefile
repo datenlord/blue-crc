@@ -44,6 +44,7 @@ verilog: table
 	mkdir -p $(VLOGDIR)
 	echo "" > $(VLOGFILE)
 	bluetcl $(LIST_VERILOG_TCL) -bdir $(BUILDDIR) -vdir $(BUILDDIR) $(TOP) $(TOP) | grep -i '\.v' | xargs -I {} cat {} >> $(VLOGFILE)
+	find $(ROOT_DIR)/lib/primitives/ -name "*.v" -exec cat {} \; >> $(VLOGFILE)
 
 cocotb: verilog
 	python3 TestCrcAxiStream.py $(JSON_CONF_FILE)

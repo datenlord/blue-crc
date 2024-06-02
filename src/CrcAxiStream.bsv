@@ -77,7 +77,7 @@ module mkCrcAxiStreamFifoOut#(
 
     Reg#(Bool) isFirstFlag <- mkReg(True);
     Reg#(CrcResult#(crcWidth)) interCrcRes <- mkReg(conf.initVal);
-    Vector#(interByteNum, RegFile#(Byte, CrcResult#(crcWidth))) crcTabVec <- genWithM(mkCrcRegFileTable(0, conf.memFilePrefix));
+    Vector#(interByteNum, LookupTable#(Byte, CrcResult#(crcWidth))) crcTabVec <- genWithM(mkCrcLookupTable(0, conf.memFilePrefix));
 
     rule preProcess;
         let axiStream = crcReq.first;
@@ -127,7 +127,7 @@ module mkCrcAxiStreamFifoOut#(
         Integer tabOffset = 0;
         if (conf.crcMode == CRC_MODE_SEND) tabOffset = valueOf(crcByteNum);
         for (Integer i = 0; i < valueOf(axiKeepWidth); i = i + 1) begin
-            tempCrcVec[i] = crcTabVec[tabOffset + i].sub(dataVec[i]);
+            tempCrcVec[i] = crcTabVec[tabOffset + i].sub1(dataVec[i]);
             //$display("read tab %d result: %x", i, tempCrcVec[i]);
         end
         let readCrcTabRes = ReadCrcTabRes {
@@ -161,16 +161,16 @@ module mkCrcAxiStreamFifoOut#(
             Integer initTabOffset = tabOffset - valueOf(crcByteNum);
             for (Integer i = 0; i < valueOf(crcByteNum); i = i + 1) begin
                 if (reduceCrcRes.ctrlSig.isFirst) begin
-                    interTempCrcVec[i] = crcTabVec[i + initTabOffset].sub(interCrcVec[i]);
+                    interTempCrcVec[i] = crcTabVec[i + initTabOffset].sub2(interCrcVec[i]);
                 end
                 else begin
-                    interTempCrcVec[i] = crcTabVec[i + tabOffset].sub(interCrcVec[i]);
+                    interTempCrcVec[i] = crcTabVec[i + tabOffset].sub2(interCrcVec[i]);
                 end
             end
         end
         else begin
             for (Integer i = 0; i < valueOf(crcByteNum); i = i + 1) begin
-                interTempCrcVec[i] = crcTabVec[i + tabOffset].sub(interCrcVec[i]);
+                interTempCrcVec[i] = crcTabVec[i + tabOffset].sub2(interCrcVec[i]);
             end
         end
 
@@ -219,7 +219,7 @@ module mkCrcAxiStreamFifoOut#(
         Vector#(interByteNum, Byte) interCrcVec = unpack(shiftInterCrcRes.interCrc);
         Vector#(interByteNum, CrcResult#(crcWidth)) readCrcTabResVec = newVector;
         for (Integer i = 0; i < valueOf(interByteNum); i = i + 1) begin
-            readCrcTabResVec[i] = crcTabVec[i].sub(interCrcVec[i]);
+            readCrcTabResVec[i] = crcTabVec[i].sub3(interCrcVec[i]);
             //$display("ReadInterCrcTab%d: %x", i, readCrcTabResVec[i]);
         end
         let readInterCrcTabRes = ReadInterCrcTabRes {
