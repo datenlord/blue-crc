@@ -130,7 +130,9 @@ class CrcLookUpTabGenerator:
             file = open(file_name, "w")
             crc_tab = self.gen_crc_tab_for_one_byte(i)
             for crc in crc_tab:
-                file.write(hex(crc)[2:] + "\n")
+                crc_hex_str = hex(crc)[2:]
+                crc_hex_str = crc_hex_str.rjust(int(crc_width/4), '0')
+                file.write(crc_hex_str + "\n")
             file.close()
 
 
