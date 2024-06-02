@@ -246,6 +246,8 @@ python3 gen_crc_tab.py JSON_FILE_PATH OUTPUT_DIR
 bsc -p +:$(BLUE_CRC)/src:$(ROOT)/lib/blue-wrapper/src
 ```
 
+8. When generating Verilog codes of your project for simulating or synthesizing using other EDA tools, you need to copy an additional Verilog file [LookupTable.v](./lib/primitives/LookupTableLoad.v) so that it can be read by your tools. This file implements the CRC lookup table using `reg` array and `$readmemh` system calls so you need to ensure that your simulation or synthesis tools support these Verilog grammers.
+
 ### Verilog Interface
 Although the blue-crc project is implemented using BSV, it also provides script **scripts/gen_crc.py** to generate configurable Verilog codes. The script needs to be executed in the root directory of blue-crc project, and the path of CRC configuration file in .json format needs to be specified:
 ```shell
